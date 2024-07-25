@@ -1,6 +1,11 @@
 // resources/js/frontpage.js
 
 document.addEventListener('DOMContentLoaded', function () {
+    // jQuery click event for #loadSpeakersButton
+    jQuery("#loadSpeakersButton").on("click", function() {
+        alert("This is a test for the app");
+    });
+
     // Example data (simulated local data)
     const speakersData = [
         { name: 'Speaker 1', bio: 'Bio for Speaker 1.' },
@@ -9,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
     ];
 
     // Example of handling a click event to load speakers
-    document.getElementById('loadSpeakers').addEventListener('click', function (event) {
+    document.getElementById('loadSpeakersButton').addEventListener('click', function (event) {
         event.preventDefault();
         
         // Example of fetching data asynchronously

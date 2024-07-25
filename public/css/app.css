@@ -11964,15 +11964,4 @@ textarea.form-control-lg {
   .d-print-none {
     display: none !important;
   }
-  .image-section {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin: 20px 0;
-}
-
-.centered-image {
-    max-width: 100%;
-    height: auto;
-}
 }

@@ -1,3 +1,5 @@
+<!-- resources/views/frontpage.blade.php -->
+
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
@@ -8,21 +10,30 @@
     <!-- Bootstrap CSS -->
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     
-    <!-- Custom CSS -->
+    <!-- Your custom CSS -->
     <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+    <style>
+        .center-image {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 50vh; /* Adjust height as needed */
+        }
+    </style>
 </head>
 <body>
     <div id="app">
-        <div class="container text-center"> <!-- Added text-center class to center align the content inside the container -->
-            <h1>Welcome to EduLoud Education App</h1>
-            <p>This is the main page of your application.</p>
+        <div class="container">
+            <h1 class="text-center">Welcome to EduLoud Education App</h1>
+            <p class="text-center">This is the main page of your application.</p>
             
-            <!-- Image Section -->
-            <div class="image-section">
-                <img src="{{ asset('images/speaker_icon.webp') }}" alt="speaker_icon" class="img-fluid centered-image">
+            <div class="center-image">
+                <img src="{{ asset('images/speaker_icon.webp') }}" alt="speaker_icon" class="img-fluid">
             </div>
-
-            <a href="#" id="loadSpeakersButton" class="btn btn-primary">Load Speakers</a>
+            
+            <div class="text-center">
+                <a href="#" id="loadSpeakersButton" class="btn btn-primary">Load Speakers</a>
+            </div>
             
             <div id="content">
                 <!-- Dynamic content will be loaded here -->
@@ -30,13 +41,13 @@
         </div>
     </div>
 
-    <!-- jQuery (required for Bootstrap JS plugins) -->
+    <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     
-    <!-- Bootstrap JS -->
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <!-- Bootstrap JS (optional, if needed) -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     
-    <!-- Custom JS -->
+    <!-- Your custom JS -->
     <script src="{{ asset('js/frontpage.js') }}"></script>
 </body>
 </html>
