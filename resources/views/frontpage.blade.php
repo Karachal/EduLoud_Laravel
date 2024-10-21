@@ -8,21 +8,70 @@
     <!-- Bootstrap CSS -->
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     
-    <!-- Custom CSS -->
+    <!-- Your custom CSS -->
     <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+    <style>
+        .center-image {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 50vh; /* Adjust height as needed */
+        }
+    </style>
 </head>
 <body>
     <div id="app">
-        <div class="container text-center"> <!-- Added text-center class to center align the content inside the container -->
-            <h1>Welcome to EduLoud Education App</h1>
-            <p>This is the main page of your application.</p>
+        <div class="container">
+            <h1 class="text-center">Welcome to EduLoud Education App</h1>
+            <p class="text-center">This is the main page of your application.</p>
             
-            <!-- Image Section -->
-            <div class="image-section">
-                <img src="{{ asset('images/speaker_icon.webp') }}" alt="speaker_icon" class="img-fluid centered-image">
+            <div class="center-image">
+                <img src="{{ asset('images/speaker_icon.webp') }}" alt="speaker_icon" class="img-fluid">
+            </div>
+            
+            <div class="text-center">
+                <a href="#" id="loadSpeakersButton" class="btn btn-primary">Load Speakers</a>
             </div>
 
-            <a href="#" id="loadSpeakersButton" class="btn btn-primary">Load Speakers</a>
+            <hr>
+
+            <!-- Toggle Button -->
+            <div class="text-center mb-3">
+                <button class="btn btn-info" type="button" data-toggle="collapse" data-target="#formCollapse" aria-expanded="false" aria-controls="formCollapse">
+                    Calculate Speaker Response
+                </button>
+            </div>
+
+            <!-- Collapsible Form -->
+            <div class="collapse" id="formCollapse">
+                <div class="card card-body">
+                    <h2 class="text-center">Enter Speaker Parameters</h2>
+                    <form id="speakerForm" action="{{ route('calculate.speaker.response') }}" method="POST">
+                        @csrf <!-- CSRF token for security -->
+                        <div class="form-group">
+                            <label for="fs">Fs (Resonant Frequency):</label>
+                            <input type="number" step="0.01" class="form-control" id="fs" name="fs" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="qts">Qts (Total Q Factor):</label>
+                            <input type="number" step="0.01" class="form-control" id="qts" name="qts" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="vas">Vas (Equivalent Volume of Compliance):</label>
+                            <input type="number" step="0.01" class="form-control" id="vas" name="vas" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="re">Re (DC Resistance):</label>
+                            <input type="number" step="0.01" class="form-control" id="re" name="re" required>
+                        </div>
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-success">Calculate Response</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <hr>
             
             <div id="content">
                 <!-- Dynamic content will be loaded here -->
@@ -30,13 +79,13 @@
         </div>
     </div>
 
-    <!-- jQuery (required for Bootstrap JS plugins) -->
+    <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
     
     <!-- Bootstrap JS -->
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.bundle.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     
-    <!-- Custom JS -->
+    <!-- Your custom JS -->
     <script src="{{ asset('js/frontpage.js') }}"></script>
 </body>
 </html>

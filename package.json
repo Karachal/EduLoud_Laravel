@@ -1,9 +1,9 @@
 {
     "private": true,
-    "type": "module",
     "scripts": {
         "dev": "mix",
-        "build": "mix --production"
+        "build": "mix --production",
+        "watch": "mix watch"
     },
     "devDependencies": {
         "axios": "^1.6.4",

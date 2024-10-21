@@ -1,36 +1,33 @@
-// resources/js/frontpage.js
-
 document.addEventListener('DOMContentLoaded', function () {
-    // Example data (simulated local data)
-    const speakersData = [
-        { name: 'Speaker 1', bio: 'Bio for Speaker 1.' },
-        { name: 'Speaker 2', bio: 'Bio for Speaker 2.' },
-        { name: 'Speaker 3', bio: 'Bio for Speaker 3.' }
-    ];
+    jQuery("#speakerForm").on("submit", function (event) {
+        event.preventDefault(); // Prevent default form submission
 
-    // Example of handling a click event to load speakers
-    document.getElementById('loadSpeakers').addEventListener('click', function (event) {
-        event.preventDefault();
-        
-        // Example of fetching data asynchronously
-        fetchSpeakers();
-    });
+        // Collect form data
+        let formData = {
+            fs: jQuery("#fs").val(),
+            qts: jQuery("#qts").val(),
+            vas: jQuery("#vas").val(),
+            re: jQuery("#re").val(),
+            _token: jQuery('input[name="_token"]').val() // CSRF token
+        };
 
-    function fetchSpeakers() {
-        // Simulate fetching data (in this case, it's already available locally)
-        displaySpeakers(speakersData);
-    }
-
-    function displaySpeakers(data) {
-        let speakersHTML = '';
-
-        data.forEach(speaker => {
-            speakersHTML += `<div>
-                                <h2>${speaker.name}</h2>
-                                <p>${speaker.bio}</p>
-                             </div>`;
+        // Send data to server via AJAX
+        jQuery.ajax({
+            url: jQuery(this).attr("action"), // URL is dynamically taken from the form's action attribute
+            type: "POST",
+            data: formData,
+            success: function (response) {
+                 // Replace newlines with <br> for proper line breaks in HTML
+                 let formattedResponse = response.response.replace(/\n/g, "<br>");
+                
+                 // Display response on the page
+                 jQuery("#content").html('<h3>Response:</h3><p>' + formattedResponse + '</p>');
+            },
+            error: function (xhr, status, error) {
+                console.error("Error: " + error);
+                console.log(xhr.responseText);
+                jQuery("#content").html('<h3>An error occurred. Please try again.</h3>');
+            }
         });
-
-        document.getElementById('content').innerHTML = speakersHTML;
-    }
+    });
 });
