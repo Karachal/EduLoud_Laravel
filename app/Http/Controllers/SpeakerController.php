@@ -14,20 +14,26 @@ class SpeakerController extends Controller
         $this->speakerService = $speakerService;
     }
 
-    public function calculateSpeakerResponse(Request $request)
+    public function calculate(Request $request)
     {
-        // Validate the request data
         $validated = $request->validate([
             'fs' => 'required|numeric',
             'qts' => 'required|numeric',
             'vas' => 'required|numeric',
-            're' => 'required|numeric'
+            're' => 'required|numeric',
+            'le' => 'required|numeric',
+            'eg' => 'required|numeric',
+            'qes' => 'required|numeric',
+            'qms' => 'required|numeric',
+            'cms' => 'required|numeric',
+            'mms' => 'required|numeric',
+            'bl' => 'required|numeric',
+            'sd' => 'required|numeric',
+            'rms' => 'required|numeric',
+            'scenario' => 'required|string'
         ]);
 
-        // Use the SpeakerService to calculate the response
-        $output = $this->speakerService->calculateResponse($validated);
-
-        // Return the output as JSON response
-        return response()->json(['response' => $output]);
+        $response = $this->speakerService->calculateResponse($validated);
+        return response()->json($response);
     }
 }

@@ -1,71 +1,85 @@
+import numpy as np
 import sys
-import math
+import json
 
-def calculate_resonant_frequency(fs, qts, vas, re):
-    """
-    Calculate the adjusted resonant frequency (Fs) based on user input.
-    """
-    # Placeholder for more complex resonant frequency calculation.
-    # Example: Adjust the resonant frequency slightly based on Qts.
-    adjusted_fs = fs * (1 + 0.1 * qts)  # Simple adjustment example
-    return adjusted_fs
+AIR_DENSITY = 1.2  # kg/m^3 (air density at sea level)
+SPEED_OF_SOUND = 343  # m/s (speed of sound in air)
 
-def calculate_impedance(re, qts):
-    """
-    Calculate the impedance based on DC resistance (Re) and Qts.
-    """
-    # Example: Impedance increases with Qts.
-    impedance = re * (1 + 0.5 * qts)  # Simple adjustment example
-    return impedance
+def calculate_speaker_response(parameters):
+    try:
+        # Extract parameters
+        fs = parameters["fs"]
+        qts = parameters["qts"]
+        vas = parameters["vas"] / 1000  # Convert liters to cubic meters
+        re = parameters["re"]
+        le = parameters["le"] * 1e-3  # Convert from mH to H
+        eg = parameters["eg"]
+        qes = parameters["qes"]
+        qms = parameters["qms"]
+        cms = parameters["cms"] * 1e-3  # Convert from mm/N to m/N
+        mms = parameters["mms"] / 1000  # Convert from grams to kg
+        bl = parameters["bl"]
+        sd = parameters["sd"] / 10000  # Convert from cm² to m²
+        rms = parameters["rms"]
+        scenario = parameters["scenario"]  
 
-def calculate_frequency_response(fs, vas, re, qts):
-    """
-    Calculate a basic model of the speaker's frequency response.
-    """
-    # Example: Frequency response could be influenced by Vas and Re.
-    # This is a simple model and can be expanded.
-    frequency_response = fs * (1 + 0.05 * vas / re)  # Simple adjustment example
-    return frequency_response
+        # Frequency range
+        frequencies = np.logspace(np.log10(20), np.log10(20000), 500)
+        omega = 2 * np.pi * frequencies
 
-def calculate_spl(fs, vas, re):
-    """
-    Calculate the Sound Pressure Level (SPL) for the speaker.
-    """
-    # Example formula for SPL, simplified and based on Vas and Re.
-    # In a more complex model, SPL would depend on multiple factors.
-    spl = 112 + 10 * math.log10(vas / re)  # Simplified SPL calculation
-    return spl
+        response_data = {
+            "frequencies": frequencies.tolist(),
+            "spl": {}
+        }
 
-def calculate_response(fs, qts, vas, re):
-    """
-    Calculate the overall speaker response using multiple parameters.
-    """
-    # Perform calculations using the helper functions.
-    adjusted_fs = calculate_resonant_frequency(fs, qts, vas, re)
-    impedance = calculate_impedance(re, qts)
-    frequency_response = calculate_frequency_response(fs, vas, re, qts)
-    spl = calculate_spl(fs, vas, re)
+        def calculate_displacement():
+            """Helper function to calculate displacement"""
+            ze = re + 1j * omega * le
+            zm = (1j * omega * mms) + (1 / (1j * omega * cms)) + rms
+            zmot = (bl ** 2) / zm
+            ztotal = ze + zmot
 
-    # Format the response for output.
-    response = (
-        f"Calculated speaker response:\n"
-        f"Adjusted Resonant Frequency (Fs): {adjusted_fs:.2f} Hz\n"
-        f"Impedance: {impedance:.2f} Ohms\n"
-        f"Frequency Response (example): {frequency_response:.2f} Hz\n"
-        f"Sound Pressure Level (SPL): {spl:.2f} dB\n"
-    )
-    
-    return response
+            current = eg / ztotal
+            force = bl * current
+            velocity = force / zm
+            return velocity / (1j * omega)
+
+        # Open Air (Free Space) Response
+        if "open_air" in scenario:
+            displacement = calculate_displacement()
+            sound_pressure = sd * (omega ** 2) * abs(displacement)
+            spl_open_air = 20 * np.log10(sound_pressure / (20e-6))
+            response_data["spl"]["open_air"] = spl_open_air.tolist()
+
+        # Sealed Box Response
+        if "sealed" in scenario:
+            Vb = parameters.get("Vb", 0.03)  # Default: 30L (0.03 m³)
+            displacement = calculate_displacement()  # Ensure displacement is recalculated
+            sound_pressure = sd * (omega ** 2) * abs(displacement) * 1.2  # Factor for sealed box
+            spl_sealed = 20 * np.log10(sound_pressure / (20e-6))
+            response_data["spl"]["sealed"] = spl_sealed.tolist()
+
+        # Ported Box Response
+        if "ported" in scenario:
+            Vb = parameters.get("Vb", 0.03)
+            port_length = parameters.get("port_length", 0.1)
+            port_diameter = parameters.get("port_diameter", 0.05)
+            port_area = np.pi * (port_diameter ** 2) / 4
+
+            displacement = calculate_displacement()  # Ensure displacement is recalculated
+            sound_pressure = sd * (omega ** 2) * abs(displacement) * 1.5  # Factor for ported box
+            spl_ported = 20 * np.log10(sound_pressure / (20e-6))
+            response_data["spl"]["ported"] = spl_ported.tolist()
+
+        return response_data
+
+    except Exception as e:
+        return {"error": str(e)}
 
 if __name__ == "__main__":
-    # Get the input parameters from command line arguments.
-    fs = float(sys.argv[1])  # Resonant Frequency (Hz)
-    qts = float(sys.argv[2])  # Total Q Factor
-    vas = float(sys.argv[3])  # Equivalent Compliance Volume (liters)
-    re = float(sys.argv[4])  # DC Resistance (Ohms)
-    
-    # Perform the calculation.
-    response = calculate_response(fs, qts, vas, re)
-    
-    # Print the result (this will be captured by shell_exec in PHP).
-    print(response)
+    try:
+        input_data = json.loads(sys.stdin.read())
+        print(json.dumps(calculate_speaker_response(input_data)))
+    except Exception as e:
+        print(json.dumps({"error": str(e)}), file=sys.stderr)
+        sys.exit(1)

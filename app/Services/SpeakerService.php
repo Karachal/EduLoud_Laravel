@@ -6,14 +6,31 @@ class SpeakerService
 {
     public function calculateResponse($data)
     {
-        // Prepare the command to call the Python script
-        $scriptPath = base_path('app/Services/Python/python_script.py'); // Get the absolute path to the Python script
-        $command = escapeshellcmd("python3 {$scriptPath} {$data['fs']} {$data['qts']} {$data['vas']} {$data['re']}");
+        // Extract parameters
+        $fs = $data['fs'];
+        $qts = $data['qts'];
+        $vas = $data['vas'];
+        $re = $data['re'];
+        $le = $data['le'];
+        $eg = $data['eg'];
+        $qes = $data['qes'];
+        $qms = $data['qms'];
+        $cms = $data['cms'];
+        $mms = $data['mms'];
+        $bl = $data['bl'];
+        $sd = $data['sd'];
+        $rms = $data['rms'];
+        $scenario = $data['scenario'];
 
-        // Execute the Python script and capture the output
-        $output = shell_exec($command);
+        // Example dummy response - Replace with actual SPL calculations
+        $frequencies = [20, 100, 500, 1000, 5000, 10000];
+        $spl = array_map(function ($freq) use ($fs, $qts) {
+            return 80 + (10 * sin($freq / $fs)) - (5 * $qts);
+        }, $frequencies);
 
-        // Return the Python script output
-        return $output;
+        return [
+            'frequencies' => $frequencies,
+            'spl' => $spl
+        ];
     }
 }
