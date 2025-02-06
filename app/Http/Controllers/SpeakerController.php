@@ -16,6 +16,7 @@ class SpeakerController extends Controller
 
     public function calculate(Request $request)
     {
+        // Base validation rules
         $validated = $request->validate([
             'fs' => 'required|numeric',
             'qts' => 'required|numeric',
@@ -30,10 +31,24 @@ class SpeakerController extends Controller
             'bl' => 'required|numeric',
             'sd' => 'required|numeric',
             'rms' => 'required|numeric',
-            'scenario' => 'required|string'
+            'scenario' => 'required|string|in:open_air,sealed,ported',
         ]);
 
-        $response = $this->speakerService->calculateResponse($validated);
-        return response()->json($response);
+        // Conditional validation for Vb, port_length, and port_diameter
+        if ($validated['scenario'] === 'sealed' || $validated['scenario'] === 'ported') {
+            $request->validate(['Vb' => 'required|numeric']);
+            $validated['Vb'] = $request->input('Vb');
+        }
+
+        if ($validated['scenario'] === 'ported') {
+            $request->validate([
+                'port_length' => 'required|numeric',
+                'port_diameter' => 'required|numeric',
+            ]);
+            $validated['port_length'] = $request->input('port_length');
+            $validated['port_diameter'] = $request->input('port_diameter');
+        }
+
+        return response()->json($this->speakerService->calculateResponse($validated));
     }
 }

@@ -6,10 +6,10 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Speaker Response Calculator</title>
 
-    <!-- Bootstrap (optional) -->
+    <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <!-- jQuery (Load before other scripts) -->
+    <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <!-- Chart.js -->
@@ -21,6 +21,7 @@
         .form-container { display: block; }
         .toggle-button { margin-bottom: 20px; }
         #formIcon { width: 100px; margin-top: 20px; }
+        .is-invalid { border-color: #dc3545; }
     </style>
 </head>
 
@@ -90,11 +91,34 @@
                     </div>
                     <div class="col-md-4">
                         <label for="scenario" class="form-label">Scenario</label>
-                        <select class="form-control" id="scenario" name="scenario">
+                        <select class="form-control" id="scenario" name="scenario" onchange="toggleBoxFields()">
                             <option value="open_air">Open Air</option>
                             <option value="sealed">Sealed</option>
                             <option value="ported">Ported</option>
                         </select>
+                    </div>
+                </div>
+
+                <!-- Box Volume (for Sealed and Ported) -->
+                <div id="boxParams" class="row mt-3" style="display: none;">
+                    <div class="col-md-4">
+                        <label for="Vb" class="form-label">Box Volume (L)</label>
+                        <input type="number" class="form-control" id="Vb" name="Vb" list="Vb-suggestions" step="0.1">
+                        <datalist id="Vb-suggestions"></datalist>
+                    </div>
+                </div>
+
+                <!-- Ported Box Parameters -->
+                <div id="portedParams" class="row mt-3" style="display: none;">
+                    <div class="col-md-4">
+                        <label for="port_length" class="form-label">Port Length (cm)</label>
+                        <input type="number" class="form-control" id="port_length" name="port_length" list="port_length-suggestions" step="0.1">
+                        <datalist id="port_length-suggestions"></datalist>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="port_diameter" class="form-label">Port Diameter (cm)</label>
+                        <input type="number" class="form-control" id="port_diameter" name="port_diameter" list="port_diameter-suggestions" step="0.1">
+                        <datalist id="port_diameter-suggestions"></datalist>
                     </div>
                 </div>
 
@@ -110,7 +134,14 @@
         </div>
     </div>
 
-    <!-- JavaScript -->
+    <script>
+        function toggleBoxFields() {
+            var scenario = document.getElementById("scenario").value;
+            document.getElementById("boxParams").style.display = (scenario === "sealed" || scenario === "ported") ? "flex" : "none";
+            document.getElementById("portedParams").style.display = (scenario === "ported") ? "flex" : "none";
+        }
+    </script>
+
     <script src="{{ asset('js/frontpage.js') }}"></script>
 </body>
 </html>

@@ -15,18 +15,50 @@ jQuery(document).ready(function () {
         event.preventDefault();
         console.log("Submitting form...");
 
+        // Clear previous error messages
+        jQuery("#errorMessage").addClass("d-none");
+        jQuery("#speakerForm input").removeClass("is-invalid");
+
+        // Validate required fields
+        var isValid = true;
+        jQuery('#speakerForm input[required]').each(function () {
+            if (!jQuery(this).val()) {
+                isValid = false;
+                jQuery(this).addClass('is-invalid');
+            }
+        });
+
+        if (!isValid) {
+            jQuery("#errorMessage").removeClass("d-none").text("Please fill all required fields.");
+            return;
+        }
+
+        // Prepare form data
         var formData = {};
         jQuery("#speakerForm").serializeArray().forEach(function (item) {
             formData[item.name] = isNaN(item.value) ? item.value : parseFloat(item.value);
         });
+
+        // Include additional fields based on the scenario selection
+        var scenario = formData.scenario;
+        if (scenario === "sealed" || scenario === "ported") {
+            formData.Vb = parseFloat(jQuery("#Vb").val()) || null;
+        }
+        if (scenario === "ported") {
+            formData.port_length = parseFloat(jQuery("#port_length").val()) || null;
+            formData.port_diameter = parseFloat(jQuery("#port_diameter").val()) || null;
+        }
 
         console.log("Form Data:", formData);
 
         // Save user inputs to localStorage
         saveSuggestions(formData);
 
-        var csrfToken = jQuery('meta[name="csrf-token"]').attr('content');
+        // Show loading state
+        jQuery("#toggleFormBtn").prop("disabled", true).text("Calculating...");
 
+        // Send AJAX request
+        var csrfToken = jQuery('meta[name="csrf-token"]').attr('content');
         jQuery.ajax({
             url: "/calculate-speaker-response",
             type: "POST",
@@ -39,39 +71,49 @@ jQuery(document).ready(function () {
                     jQuery("#errorMessage").removeClass("d-none").text(response.error);
                 } else {
                     console.log("Server Response:", response);
-                    updateChart(response.frequencies, response.spl);
+                    var scenario = jQuery("#scenario").val(); // Get the selected scenario
+                    updateChart(response.frequencies, response.spl, scenario); // Pass scenario to updateChart
                 }
             },
             error: function (xhr) {
-                jQuery("#errorMessage").removeClass("d-none").text("Error: " + xhr.responseText);
+                var errorMessage = "An error occurred. Please try again.";
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMessage = xhr.responseJSON.error;
+                }
+                jQuery("#errorMessage").removeClass("d-none").text(errorMessage);
+            },
+            complete: function () {
+                jQuery("#toggleFormBtn").prop("disabled", false).text("Hide Form");
             }
         });
     });
 
     // Function to update or create the chart
-    function updateChart(frequencies, splValues) {
-        console.log("Updating Chart with Data:", frequencies, splValues);
-
-        if (!Array.isArray(frequencies) || !Array.isArray(splValues) || frequencies.length === 0) {
+    function updateChart(frequencies, splData, scenario) {
+        console.log("Updating Chart with Data:", frequencies, splData, scenario);
+    
+        // Check if the data is valid
+        if (!Array.isArray(frequencies) || !splData || !splData[scenario]) {
             console.error("Invalid data received for chart update.");
             return;
         }
-
+    
         var ctx = document.getElementById("responseChart").getContext("2d");
-
+    
         // Destroy previous chart if exists
         if (responseChart) {
             responseChart.destroy();
         }
-
+    
+        // Create the chart
         responseChart = new Chart(ctx, {
             type: "line",
             data: {
                 labels: frequencies,
                 datasets: [{
-                    label: "SPL Response",
-                    data: splValues,
-                    borderColor: "blue",
+                    label: `SPL Response (${scenario.replace("_", " ")})`, // Format scenario name
+                    data: splData[scenario], // Use the selected scenario's data
+                    borderColor: scenario === "open_air" ? "blue" : scenario === "sealed" ? "green" : "red",
                     borderWidth: 2,
                     pointRadius: 2,
                     fill: false,
@@ -101,7 +143,7 @@ jQuery(document).ready(function () {
             }
         });
     }
-
+    // Save user inputs to localStorage
     function saveSuggestions(formData) {
         var savedSuggestions = JSON.parse(localStorage.getItem("speakerFormSuggestions")) || {};
         
@@ -117,6 +159,7 @@ jQuery(document).ready(function () {
         localStorage.setItem("speakerFormSuggestions", JSON.stringify(savedSuggestions));
     }
 
+    // Restore suggestions from localStorage
     function restoreSuggestions() {
         var savedSuggestions = JSON.parse(localStorage.getItem("speakerFormSuggestions")) || {};
 
@@ -132,4 +175,17 @@ jQuery(document).ready(function () {
 
         console.log("Restored Suggestions:", savedSuggestions);
     }
+
+    // Show or hide extra fields based on scenario
+    jQuery("#scenario").on("change", function () {
+        var scenario = jQuery(this).val();
+        if (scenario === "sealed") {
+            jQuery("#Vb-container").show();
+            jQuery("#port-length-container, #port-diameter-container").hide();
+        } else if (scenario === "ported") {
+            jQuery("#Vb-container, #port-length-container, #port-diameter-container").show();
+        } else {
+            jQuery("#Vb-container, #port-length-container, #port-diameter-container").hide();
+        }
+    }).trigger("change"); // Ensure correct visibility on page load
 });
