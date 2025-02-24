@@ -71,8 +71,7 @@ jQuery(document).ready(function () {
                     jQuery("#errorMessage").removeClass("d-none").text(response.error);
                 } else {
                     console.log("Server Response:", response);
-                    var scenario = jQuery("#scenario").val(); // Get the selected scenario
-                    updateChart(response.frequencies, response.spl, scenario); // Pass scenario to updateChart
+                    updateChart(response.frequencies, response.spl, scenario); // Update chart with the selected scenario
                 }
             },
             error: function (xhr) {
@@ -91,62 +90,86 @@ jQuery(document).ready(function () {
     // Function to update or create the chart
     function updateChart(frequencies, splData, scenario) {
         console.log("Updating Chart with Data:", frequencies, splData, scenario);
-    
+
+        // Deep copy the splData to avoid shared references
+        splData = JSON.parse(JSON.stringify(splData));
+
         // Check if the data is valid
         if (!Array.isArray(frequencies) || !splData || !splData[scenario]) {
             console.error("Invalid data received for chart update.");
             return;
         }
-    
+
         var ctx = document.getElementById("responseChart").getContext("2d");
-    
-        // Destroy previous chart if exists
-        if (responseChart) {
-            responseChart.destroy();
-        }
-    
-        // Create the chart
-        responseChart = new Chart(ctx, {
-            type: "line",
-            data: {
-                labels: frequencies,
-                datasets: [{
-                    label: `SPL Response (${scenario.replace("_", " ")})`, // Format scenario name
-                    data: splData[scenario], // Use the selected scenario's data
-                    borderColor: scenario === "open_air" ? "blue" : scenario === "sealed" ? "green" : "red",
-                    borderWidth: 2,
-                    pointRadius: 2,
-                    fill: false,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        type: "logarithmic",
-                        position: "bottom",
-                        title: { display: true, text: "Frequency (Hz)" }
+
+        // Convert frequencies and SPL into paired data points
+        var dataPoints = frequencies.map((f, i) => ({ x: f, y: splData[scenario][i] }));
+
+        // If the chart doesn't exist, create it
+        if (!responseChart) {
+            responseChart = new Chart(ctx, {
+                type: "line",
+                data: {
+                    datasets: []
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: "logarithmic",
+                            position: "bottom",
+                            title: { display: true, text: "Frequency (Hz)" },
+                            min: 20, // Start at 20 Hz
+                            max: 20000, // End at 20000 Hz
+                            ticks: {
+                                callback: function (value) {
+                                    return Number(value).toFixed(0); // Show values in integer format
+                                }
+                            }
+                        },
+                        y: {
+                            title: { display: true, text: "SPL (dB)" },
+                            ticks: { beginAtZero: false }
+                        }
                     },
-                    y: {
-                        title: { display: true, text: "SPL (dB)" },
-                        ticks: { beginAtZero: false }
+                    elements: {
+                        line: { borderJoinStyle: 'round' }
+                    },
+                    plugins: {
+                        legend: { display: true } // Show legend to differentiate datasets
                     }
-                },
-                elements: {
-                    line: { borderJoinStyle: 'round' }
-                },
-                plugins: {
-                    legend: { display: false }
                 }
-            }
-        });
+            });
+        }
+
+        // Check if the dataset for the current scenario already exists
+        var datasetIndex = responseChart.data.datasets.findIndex(dataset => dataset.label === scenario.replace("_", " "));
+
+        if (datasetIndex === -1) {
+            // Add a new dataset for the scenario
+            responseChart.data.datasets.push({
+                label: scenario.replace("_", " "), // Format scenario name
+                data: dataPoints, // Use paired data points
+                borderColor: scenario === "open_air" ? "blue" : scenario === "sealed" ? "green" : "red",
+                borderWidth: 1,
+                pointRadius: 1,
+                fill: false,
+                tension: 0.4
+            });
+        } else {
+            // Update the existing dataset
+            responseChart.data.datasets[datasetIndex].data = dataPoints;
+        }
+
+        // Update the chart
+        responseChart.update();
     }
+
     // Save user inputs to localStorage
     function saveSuggestions(formData) {
         var savedSuggestions = JSON.parse(localStorage.getItem("speakerFormSuggestions")) || {};
-        
+
         Object.keys(formData).forEach(function (key) {
             if (!savedSuggestions[key]) {
                 savedSuggestions[key] = [];
@@ -187,5 +210,13 @@ jQuery(document).ready(function () {
         } else {
             jQuery("#Vb-container, #port-length-container, #port-diameter-container").hide();
         }
-    }).trigger("change"); // Ensure correct visibility on page load
+    }).trigger("change");
+
+    // Clear all datasets from the chart
+    jQuery('#clearChartBtn').on('click', function () {
+        if (responseChart) {
+            responseChart.data.datasets = []; // Clear all datasets
+            responseChart.update(); // Update the chart
+        }
+    });
 });

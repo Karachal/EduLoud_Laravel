@@ -14,6 +14,7 @@
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-logarithmic"></script>
 
     <style>
         body { padding: 20px; }
@@ -44,7 +45,7 @@
         <div class="form-container" id="speakerFormContainer">
             <form id="speakerForm">
                 <div class="row">
-                    @foreach (['fs' => 'Fs (Hz)', 'qts' => 'Qts', 'vas' => 'Vas (L)'] as $id => $label)
+                    @foreach (['fs' => 'Fs (Hz)', 'qes' => 'Qes', 'qms' => 'Qms'] as $id => $label)
                         <div class="col-md-4">
                             <label for="{{ $id }}" class="form-label">{{ $label }}</label>
                             <input type="number" class="form-control" id="{{ $id }}" name="{{ $id }}" list="{{ $id }}-suggestions" required step="any">
@@ -54,7 +55,7 @@
                 </div>
 
                 <div class="row mt-3">
-                    @foreach (['re' => 'Re (Ohms)', 'le' => 'Le (mH)', 'eg' => 'Eg (V)'] as $id => $label)
+                    @foreach (['re' => 'Re (Ω)', 'le' => 'Le (H)', 'eg' => 'Eg (V)'] as $id => $label)
                         <div class="col-md-4">
                             <label for="{{ $id }}" class="form-label">{{ $label }}</label>
                             <input type="number" class="form-control" id="{{ $id }}" name="{{ $id }}" list="{{ $id }}-suggestions" required step="any">
@@ -64,7 +65,7 @@
                 </div>
 
                 <div class="row mt-3">
-                    @foreach (['qes' => 'Qes', 'qms' => 'Qms', 'cms' => 'Cms (mm/N)'] as $id => $label)
+                    @foreach (['vas' => 'Vas (m³)', 'cms' => 'Cms', 'mms' => 'Mms (g)'] as $id => $label)
                         <div class="col-md-4">
                             <label for="{{ $id }}" class="form-label">{{ $label }}</label>
                             <input type="number" class="form-control" id="{{ $id }}" name="{{ $id }}" list="{{ $id }}-suggestions" required step="any">
@@ -74,7 +75,7 @@
                 </div>
 
                 <div class="row mt-3">
-                    @foreach (['mms' => 'Mms (g)', 'bl' => 'BL (Tm)', 'sd' => 'Sd (cm²)'] as $id => $label)
+                    @foreach (['bl' => 'BL (Tm)', 'sd' => 'Sd (m²)'] as $id => $label)
                         <div class="col-md-4">
                             <label for="{{ $id }}" class="form-label">{{ $label }}</label>
                             <input type="number" class="form-control" id="{{ $id }}" name="{{ $id }}" list="{{ $id }}-suggestions" required step="any">
@@ -83,12 +84,18 @@
                     @endforeach
                 </div>
 
+                <!-- Commented out Rms field -->
+                <!--
                 <div class="row mt-3">
                     <div class="col-md-4">
                         <label for="rms" class="form-label">Rms (kg/s)</label>
                         <input type="number" class="form-control" id="rms" name="rms" list="rms-suggestions" required step="any">
                         <datalist id="rms-suggestions"></datalist>
                     </div>
+                </div>
+                -->
+
+                <div class="row mt-3">
                     <div class="col-md-4">
                         <label for="scenario" class="form-label">Scenario</label>
                         <select class="form-control" id="scenario" name="scenario" onchange="toggleBoxFields()">
@@ -124,6 +131,7 @@
 
                 <div class="mt-4 text-center">
                     <button type="submit" class="btn btn-primary">Calculate Response</button>
+                    <button type="button" id="clearChartBtn" class="btn btn-danger">Clear Chart</button>
                 </div>
             </form>
         </div>

@@ -18,32 +18,30 @@ class SpeakerController extends Controller
     {
         // Base validation rules
         $validated = $request->validate([
-            'fs' => 'required|numeric',
-            'qts' => 'required|numeric',
-            'vas' => 'required|numeric',
-            're' => 'required|numeric',
-            'le' => 'required|numeric',
-            'eg' => 'required|numeric',
-            'qes' => 'required|numeric',
-            'qms' => 'required|numeric',
-            'cms' => 'required|numeric',
-            'mms' => 'required|numeric',
-            'bl' => 'required|numeric',
-            'sd' => 'required|numeric',
-            'rms' => 'required|numeric',
-            'scenario' => 'required|string|in:open_air,sealed,ported',
+            'fs' => 'required|numeric', // Resonant frequency (Hz)
+            'qes' => 'required|numeric', // Electrical Q factor
+            'qms' => 'required|numeric', // Mechanical Q factor
+            'vas' => 'required|numeric', // Equivalent volume of compliance (m³)
+            're' => 'required|numeric', // Voice coil resistance (Ω)
+            'le' => 'required|numeric', // Voice coil inductance (H)
+            'eg' => 'required|numeric', // Voice coil height (V)
+            'cms' => 'required|numeric', // Mechanical compliance
+            'mms' => 'required|numeric', // Mechanical mass (g)
+            'bl' => 'required|numeric', // Force factor (Tm)
+            'sd' => 'required|numeric', // Diaphragm surface area (m²)
+            'scenario' => 'required|string|in:open_air,sealed,ported', // Box scenario
         ]);
 
         // Conditional validation for Vb, port_length, and port_diameter
         if ($validated['scenario'] === 'sealed' || $validated['scenario'] === 'ported') {
-            $request->validate(['Vb' => 'required|numeric']);
+            $request->validate(['Vb' => 'required|numeric']); // Box volume (L)
             $validated['Vb'] = $request->input('Vb');
         }
 
         if ($validated['scenario'] === 'ported') {
             $request->validate([
-                'port_length' => 'required|numeric',
-                'port_diameter' => 'required|numeric',
+                'port_length' => 'required|numeric', // Port length (cm)
+                'port_diameter' => 'required|numeric', // Port diameter (cm)
             ]);
             $validated['port_length'] = $request->input('port_length');
             $validated['port_diameter'] = $request->input('port_diameter');
