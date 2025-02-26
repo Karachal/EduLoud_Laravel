@@ -7,43 +7,42 @@ import sys
 # Constants
 SOUND_CELERITY = 343  # Speed of sound in air, m/s
 R_0 = 1.18  # Air density, kg/m^3
-LM = 6 * 10 ** (-8)  # Molecular mean free path length between collisions, m
-POROSITY = 0.99  # Porosity
 P_0 = 10**5  # Atmospheric pressure, Pa
-U = 0.03  # Flow velocity in the material, m/s
+GAMMA = 1.4  # Adiabatic index
+P_REF = 20 * 10 ** (-6)  # Reference sound pressure, Pa (20 µPa)
+
+# Material properties for flow resistance
 m = 1.86 * 10 ** (-5)  # Viscosity coefficient, N.s/m^2
 R = 60 * 10 ** (-6)  # Fiber diameter, m
-GAMMA = 1.4  # Adiabatic index
+POROSITY = 0.99  # Porosity
+U = 0.03  # Flow velocity in the material, m/s
 
-# Coefficients for characteristic impedance and wave number of a homogeneous absorbent material
+# Coefficients for wave number calculation
 A3 = 0.0858
 A4 = 0.175
 B3 = 0.7
 B4 = 0.59
 
-# Reference sound pressure, Pa (20 µPa)
-P_REF = 20 * 10 ** (-6)
-
 class Loudspeaker:
     """Loudspeaker model with Thiele-Small parameters."""
     def __init__(self, lsp_par):
-        self.Re = lsp_par["re"]
-        self.Le = lsp_par["le"]  # Already in H (Henries)
-        self.e_g = lsp_par["eg"]
-        self.Qes = lsp_par["qes"]
-        self.Qms = lsp_par["qms"]
-        self.fs = lsp_par["fs"]
-        self.Vas = lsp_par["vas"]  # Already in m³
-        self.Cms = lsp_par["cms"]  # Already in m/N
-        self.Mms = lsp_par["mms"]  # Already in kg
-        self.Bl = lsp_par["bl"]
-        self.Sd = lsp_par["sd"]  # Already in m²
-        self.a = np.sqrt(self.Sd / np.pi)  # Diaphragm radius
+        self.Re = lsp_par["re"]  # Voice coil resistance, Ω
+        self.Le = lsp_par["le"]  # Voice coil inductance, H
+        self.e_g = lsp_par["eg"]  # Input voltage, V
+        self.Qes = lsp_par["qes"]  # Electrical Q factor
+        self.Qms = lsp_par["qms"]  # Mechanical Q factor
+        self.fs = lsp_par["fs"]  # Resonant frequency, Hz
+        self.Vas = lsp_par["vas"]  # Equivalent volume of compliance, m³
+        self.Cms = lsp_par["cms"]  # Mechanical compliance, m/N
+        self.Mms = lsp_par["mms"]  # Mechanical mass, kg
+        self.Bl = lsp_par["bl"]  # Force factor, N/A
+        self.Sd = lsp_par["sd"]  # Diaphragm surface area, m²
+        self.a = np.sqrt(self.Sd / np.pi)  # Diaphragm radius, m
 
         # Derived parameters
-        self.Qts = (self.Qes * self.Qms) / (self.Qes + self.Qms)
-        self.Rms = (1 / self.Qms) * np.sqrt(self.Mms / self.Cms)
-        self.Mmd = self.Mms - (16 * R_0 * self.a**3 / 3)
+        self.Qts = (self.Qes * self.Qms) / (self.Qes + self.Qms)  # Total Q factor
+        self.Rms = (1 / self.Qms) * np.sqrt(self.Mms / self.Cms)  # Mechanical resistance, N·s/m
+        self.Mmd = self.Mms - (16 * R_0 * self.a**3 / 3)  # Effective moving mass, kg
 
     def calculate_R_f(self):
         """Calculate flow resistance of lining material, Eq. 7.8."""
@@ -65,7 +64,7 @@ class Loudspeaker:
     def calculate_spl(self, f):
         """Calculate the sound pressure level."""
         k = self.calculate_wave_number(f)
-        H1 = float(mpmath.struveh(1, 2 * k * self.a))  # Convert to float
+        H1 = mpmath.struveh(1, 2 * k * self.a)
         Zmt = (
             self.Bl**2 / (self.Re + 1j * 2 * np.pi * f * self.Le)
             + 1j * 2 * np.pi * f * self.Mmd
@@ -79,107 +78,135 @@ class Loudspeaker:
         )
         u_c = self.e_g * self.Bl / ((self.Re + 1j * 2 * np.pi * f * self.Le) * Zmt)
         p_rms = R_0 * f * self.Sd * u_c
-        SPL = 20 * np.log10(float(np.abs(p_rms)) / float(np.abs(P_REF)))
+        pref = 20e-6
+        SPL = 20 * np.log10(float(np.abs(p_rms)) / float(np.abs(pref)))
         return SPL
 
 class SealedBoxEnclosure:
-    """Sealed Box (Closed Box) Loudspeaker Enclosure Parameters."""
-
+    """Sealed box (closed) loudspeaker enclosure model."""
     def __init__(self, loudspeaker, Vb):
         self.loudspeaker = loudspeaker
-        self.Vb = Vb  # Box volume is directly provided
+        self.Vb = Vb * 0.001  # Convert liters to m³
 
     def calculate_impedance_sealed(self, f):
-        """Calculate the impedance in a sealed box at a given frequency."""
-        V_eff = self.loudspeaker.Vas * (1 + self.Vb / self.loudspeaker.Vas)  # Effective compliance
-        Zmt = self.loudspeaker.Re + 1j * 2 * np.pi * f * self.loudspeaker.Le + 1 / (1j * 2 * np.pi * f * self.loudspeaker.Cms) + 1j * 2 * np.pi * f * self.loudspeaker.Mms
-        return Zmt
+        """Calculate total system impedance in a sealed enclosure."""
+        if self.Vb <= 0:
+            return np.inf  # Prevent division errors
+
+        # Air compliance in the box
+        C_air = self.Vb / (GAMMA * P_0)  # Box volume affects air compliance
+        C_total = 1 / (1 / self.loudspeaker.Cms + 1 / C_air)  # Total compliance
+
+        # Mechanical impedance
+        Z_mech = (
+            1j * 2 * np.pi * f * self.loudspeaker.Mms
+            + self.loudspeaker.Rms
+            + 1 / (1j * 2 * np.pi * f * C_total)
+        )
+
+        # Electrical impedance
+        Z_electrical = self.loudspeaker.Re + 1j * 2 * np.pi * f * self.loudspeaker.Le
+
+        # Total impedance
+        Z_tot = Z_electrical + (self.loudspeaker.Bl**2) / Z_mech
+        return Z_tot
 
     def calculate_spl_sealed(self, f):
-        """Calculate the SPL in a sealed box."""
-        Zmt = self.calculate_impedance_sealed(f)
-        u_c = self.loudspeaker.e_g * self.loudspeaker.Bl / (self.loudspeaker.Re + 1j * 2 * np.pi * f * self.loudspeaker.Le) / Zmt
+        """Calculate SPL in a sealed box."""
+        Z_tot = self.calculate_impedance_sealed(f)
+        if np.isinf(Z_tot):
+            return -100  # If impedance is infinite, return very low SPL
+
+        Z_coil = self.loudspeaker.Re + 1j * 2 * np.pi * f * self.loudspeaker.Le
+        u_c = self.loudspeaker.e_g * self.loudspeaker.Bl / (Z_coil * Z_tot)
         p_rms = R_0 * f * self.loudspeaker.Sd * u_c
-        SPL = 20 * np.log10(float(np.abs(p_rms)) / float(np.abs(P_REF)))
+        p_rms = max(np.abs(p_rms), P_REF * 0.1)  # Ensure p_rms is reasonable
+        SPL = 20 * np.log10(p_rms / P_REF)
         return SPL
 
     def calculate_response(self, frequencies):
-        """Calculate the system response for a sealed box."""
-        spl_values = np.zeros_like(frequencies)
-        for i in range(len(frequencies)):
-            spl_values[i] = self.calculate_spl_sealed(frequencies[i])
-        return spl_values
+        return [self.calculate_spl_sealed(f) for f in frequencies]
 
 class PortedBoxEnclosure:
-    """Ported Box (Bass Reflex) Loudspeaker Enclosure Parameters."""
-
-    def __init__(self, loudspeaker, Vb):
+    """Ported (bass reflex) loudspeaker enclosure model."""
+    def __init__(self, loudspeaker, Vb, port_length, port_diameter):
         self.loudspeaker = loudspeaker
-        self.Vb = Vb  # Box volume is directly provided
-        self.calculate_port()
+        self.Vb = Vb * 0.001  # Convert liters to m³
+        self.port_length = port_length * 0.01  # Convert cm to m
+        self.port_diameter = port_diameter * 0.01  # Convert cm to m
+        self.Sp = np.pi * (self.port_diameter / 2) ** 2  # Port area
 
-    def calculate_port(self):
-        """Calculate the port parameters."""
-        fb = self.loudspeaker.fs * 0.9735  # Tuning frequency (fixed value based on alignment)
-        Vmax = 0.001 * self.loudspeaker.Sd * fb  # Maximum volume displacement
-        Vp = 10 * Vmax  # Port volume
-        port_length = 345 / (2 * np.pi * fb) * np.sqrt(Vp / self.Vb)  # Length of the port
-        Sp = (Vp * 0.001) / port_length  # Area of the port
-        return Sp, port_length, fb
+    def calculate_tuning_frequency(self):
+        """Calculate Helmholtz resonance frequency."""
+        return (SOUND_CELERITY / (2 * np.pi)) * np.sqrt(self.Sp / (self.Vb * self.port_length))
 
     def calculate_impedance_ported(self, f):
-        """Calculate the impedance in a ported box at a given frequency."""
-        Sp, port_length, fb = self.calculate_port()
-        Zmt = self.loudspeaker.Re + 1j * 2 * np.pi * f * self.loudspeaker.Le + 1 / (1j * 2 * np.pi * f * self.loudspeaker.Cms) + 1j * 2 * np.pi * f * self.loudspeaker.Mms
-        Z_port = 1 / (1j * 2 * np.pi * f * Sp)  # Port impedance
-        return Zmt + Z_port  # Combined impedance
+        """Calculate impedance in a ported enclosure."""
+        # Helmholtz resonance frequency
+        fb = (SOUND_CELERITY / (2 * np.pi)) * np.sqrt(self.Sp / (self.Vb * self.port_length))
+
+        # Mechanical impedance
+        Z_mech = (
+            1j * 2 * np.pi * f * self.loudspeaker.Mms
+            + self.loudspeaker.Rms
+            + 1 / (1j * 2 * np.pi * f * self.loudspeaker.Cms)
+        )
+
+        # Port impedance
+        M_port = R_0 * self.port_length / self.Sp  # Mass of air in the port
+        C_box = self.Vb / (R_0 * SOUND_CELERITY**2)  # Compliance of the air in the box
+        Z_port = 1j * (2 * np.pi * f * M_port - 1 / (2 * np.pi * f * C_box))
+
+        # Total impedance (parallel combination of Z_mech and Z_port)
+        Z_tot = 1 / (1 / Z_mech + 1 / Z_port)
+        return Z_tot
 
     def calculate_spl_ported(self, f):
-        """Calculate the SPL in a ported box."""
-        Zmt = self.calculate_impedance_ported(f)
-        u_c = self.loudspeaker.e_g * self.loudspeaker.Bl / (self.loudspeaker.Re + 1j * 2 * np.pi * f * self.loudspeaker.Le) / Zmt
+        """Calculate SPL in a ported box."""
+        Z_tot = self.calculate_impedance_ported(f)
+        if np.isinf(Z_tot):
+            return -100  # If impedance is infinite, return very low SPL
+
+        Z_coil = self.loudspeaker.Re + 1j * 2 * np.pi * f * self.loudspeaker.Le
+        u_c = self.loudspeaker.e_g * self.loudspeaker.Bl / (Z_coil * Z_tot)
         p_rms = R_0 * f * self.loudspeaker.Sd * u_c
-        SPL = 20 * np.log10(float(np.abs(p_rms)) / float(np.abs(P_REF)))
+        p_rms = max(np.abs(p_rms), P_REF * 0.1)  # Ensure p_rms is reasonable
+        SPL = 20 * np.log10(p_rms / P_REF)
         return SPL
 
     def calculate_response(self, frequencies):
-        """Calculate the system response for a ported box."""
-        spl_values = np.zeros_like(frequencies)
-        for i in range(len(frequencies)):
-            spl_values[i] = self.calculate_spl_ported(frequencies[i])
-        return spl_values
+        return [self.calculate_spl_ported(f) for f in frequencies]
 
 def calculate_speaker_response(parameters):
     """Calculate the frequency response for the given scenario."""
     try:
         scenario = parameters["scenario"]
-        frequencies = np.logspace(np.log10(20), np.log10(20000), 500)  # Logarithmic frequency range
+        frequencies = np.logspace(np.log10(20), np.log10(20000), 1500)  # Logarithmic frequency range
 
         lsp_par = {key: parameters[key] for key in ["re", "le", "eg", "qes", "qms", "fs", "vas", "cms", "mms", "bl", "sd"]}
         loudspeaker = Loudspeaker(lsp_par)
 
         if scenario == "open_air":
             spl = [loudspeaker.calculate_spl(f) for f in frequencies]
-            response_data = {"frequencies": frequencies.tolist(), "spl": {"open_air": spl}}
         elif scenario == "sealed":
-            enclosure = SealedBoxEnclosure(loudspeaker, parameters["Vb"])
+            Vb = parameters["Vb"]  # Box volume in liters
+            enclosure = SealedBoxEnclosure(loudspeaker, Vb)
             spl = enclosure.calculate_response(frequencies)
-            response_data = {"frequencies": frequencies.tolist(), "spl": {"sealed": spl.tolist()}}
         elif scenario == "ported":
-            enclosure = PortedBoxEnclosure(loudspeaker, parameters["Vb"])
+            Vb = parameters["Vb"]  # Box volume in liters
+            port_length = parameters["port_length"]  # Port length in cm
+            port_diameter = parameters["port_diameter"]  # Port diameter in cm
+            enclosure = PortedBoxEnclosure(loudspeaker, Vb, port_length, port_diameter)
             spl = enclosure.calculate_response(frequencies)
-            response_data = {"frequencies": frequencies.tolist(), "spl": {"ported": spl.tolist()}}
-        return response_data
+
+        return {"frequencies": frequencies.tolist(), "spl": {scenario: spl}}
     except Exception as e:
         return {"error": str(e)}
 
 if __name__ == "__main__":
     try:
-        # Read input data from stdin
         input_data = json.loads(sys.stdin.read())
-        # Calculate response
         response = calculate_speaker_response(input_data)
-        # Output JSON response
         print(json.dumps(response))
     except Exception as e:
         print(json.dumps({"error": str(e)}), file=sys.stderr)
