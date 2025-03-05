@@ -24,18 +24,25 @@ class SpeakerController extends Controller
             'vas' => 'required|numeric', // Equivalent volume of compliance (m³)
             're' => 'required|numeric', // Voice coil resistance (Ω)
             'le' => 'required|numeric', // Voice coil inductance (H)
-            'eg' => 'required|numeric', // Voice coil height (V)
+            // 'eg' => 'required|numeric', // Voice coil height (V)
             'cms' => 'required|numeric', // Mechanical compliance
             'mms' => 'required|numeric', // Mechanical mass (g)
             'bl' => 'required|numeric', // Force factor (Tm)
             'sd' => 'required|numeric', // Diaphragm surface area (m²)
+            'rms' => 'required|numeric',
             'scenario' => 'required|string|in:open_air,sealed,ported', // Box scenario
         ]);
 
-        // Conditional validation for Vb, port_length, and port_diameter
+        // Conditional validation for lx, ly, and lz, port_length, and port_diameter
         if ($validated['scenario'] === 'sealed' || $validated['scenario'] === 'ported') {
-            $request->validate(['Vb' => 'required|numeric']); // Box volume (L)
-            $validated['Vb'] = $request->input('Vb');
+            $request->validate([
+                'lx' => 'required|numeric',
+                'ly' => 'required|numeric',
+                'lz' => 'required|numeric',
+            ]);
+            $validated['lx'] = $request->input('lx');
+            $validated['ly'] = $request->input('ly');
+            $validated['lz'] = $request->input('lz');
         }
 
         if ($validated['scenario'] === 'ported') {

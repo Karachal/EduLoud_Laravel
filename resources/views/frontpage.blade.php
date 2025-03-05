@@ -48,9 +48,16 @@
                     <div class="form-section form-section-divider">
                         <h5 class="text-center">Thiele-Small Parameters</h5>
                         <div class="row">
-                            @foreach (['fs' => 'Fs (Hz)', 'qes' => 'Qes', 'qms' => 'Qms', 're' => 'Re (Ω)', 'le' => 'Le (H)', 'eg' => 'Eg (V)'] as $id => $label)
+                            @foreach ([
+                                're' => 'R<sub>E</sub> (Ω)',
+                                'qes' => 'Q<sub>es</sub>',
+                                'qms' => 'Q<sub>ms</sub>',
+                                'fs' => 'f<sub>s</sub> (Hz)',
+                                'sd' => 'S<sub>d</sub> (cm²)',  
+                                'vas' => 'V<sub>as</sub> (L)'   
+                            ] as $id => $label)
                                 <div class="col-md-12">
-                                    <label for="{{ $id }}" class="form-label">{{ $label }}</label>
+                                    <label for="{{ $id }}" class="form-label">{!! $label !!}</label>  <!-- Allow raw HTML rendering -->
                                     <input type="number" class="form-control" id="{{ $id }}" name="{{ $id }}" list="{{ $id }}-suggestions" required step="any">
                                     <datalist id="{{ $id }}-suggestions"></datalist>
                                 </div>
@@ -58,15 +65,21 @@
                         </div>
                     </div>
 
-                    <!-- Physical Parameters Section -->
+
+                    <!-- Physical Parameters Section (Auto-Calculated) -->
                     <div class="form-section">
-                        <h5 class="text-center">Physical Parameters</h5>
+                        <h5 class="text-center">Calculated Physical Parameters</h5>
                         <div class="row">
-                            @foreach (['vas' => 'Vas (m³)', 'cms' => 'Cms', 'mms' => 'Mms (kg)', 'bl' => 'BL (Tm)', 'sd' => 'Sd (m²)'] as $id => $label)
+                            @foreach ([
+                                'cms' => 'C<sub>ms</sub> (µm/N)',
+                                'mms' => 'M<sub>ms</sub> (g)',
+                                'rms' => 'R<sub>ms</sub> (Ns/m)',
+                                'bl' => 'B<sub>L</sub> (Tm)',
+                                'le' => 'L<sub>e</sub> (mH)'
+                            ] as $id => $label)
                                 <div class="col-md-12">
-                                    <label for="{{ $id }}" class="form-label">{{ $label }}</label>
-                                    <input type="number" class="form-control" id="{{ $id }}" name="{{ $id }}" list="{{ $id }}-suggestions" required step="any">
-                                    <datalist id="{{ $id }}-suggestions"></datalist>
+                                    <label for="{{ $id }}" class="form-label">{!! $label !!}</label>  <!-- Render subscripts correctly -->
+                                    <input type="number" class="form-control" id="{{ $id }}" name="{{ $id }}" required step="any" data-calculated="true">
                                 </div>
                             @endforeach
                         </div>
@@ -87,22 +100,32 @@
 
                 <!-- Box Parameters -->
                 <div id="boxParams" class="row mt-3" style="display: none;">
-                    <div class="col-md-6">
-                        <label for="Vb" class="form-label">Box Volume (L)</label>
-                        <input type="number" class="form-control" id="Vb" name="Vb" list="Vb-suggestions" step="0.1">
-                        <datalist id="Vb-suggestions"></datalist>
+                    <div class="col-12">
+                        <label class="form-label fw-bold">Box Dimensions</label>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="lx" class="form-label">l<sub>x</sub> (cm)</label>
+                        <input type="number" class="form-control" id="lx" name="lx" step="0.1">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="ly" class="form-label">l<sub>y</sub> (cm)</label>
+                        <input type="number" class="form-control" id="ly" name="ly" step="0.1">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="lz" class="form-label">l<sub>z</sub> (cm)</label>
+                        <input type="number" class="form-control" id="lz" name="lz" step="0.1">
                     </div>
                 </div>
 
                 <!-- Ported Box Parameters -->
                 <div id="portedParams" class="row mt-3" style="display: none;">
                     <div class="col-md-6">
-                        <label for="port_length" class="form-label">Port Length (cm)</label>
+                        <label for="port_length" class="form-label">Port length (cm)</label> <!-- Port Length -->
                         <input type="number" class="form-control" id="port_length" name="port_length" list="port_length-suggestions" step="0.1">
                         <datalist id="port_length-suggestions"></datalist>
                     </div>
                     <div class="col-md-6">
-                        <label for="port_diameter" class="form-label">Port Diameter (cm)</label>
+                        <label for="port_diameter" class="form-label">Port diameter (cm)</label> <!-- Port Diameter -->
                         <input type="number" class="form-control" id="port_diameter" name="port_diameter" list="port_diameter-suggestions" step="0.1">
                         <datalist id="port_diameter-suggestions"></datalist>
                     </div>

@@ -11,15 +11,14 @@ jQuery(document).ready(function () {
         jQuery('#toggleFormBtn').text(isVisible ? 'Hide Form' : 'Show Form');
     });
 
-    // Handle form submission
     jQuery('#speakerForm').on('submit', function (event) {
         event.preventDefault();
         console.log("Submitting form...");
-
+    
         // Clear previous error messages
         jQuery("#errorMessage").addClass("d-none");
         jQuery("#speakerForm input").removeClass("is-invalid");
-
+    
         // Validate required fields
         var isValid = true;
         jQuery('#speakerForm input[required]').each(function () {
@@ -32,31 +31,38 @@ jQuery(document).ready(function () {
             jQuery("#errorMessage").removeClass("d-none").text("Please fill all required fields.");
             return;
         }
-
+    
         // Prepare form data
         var formData = {};
         jQuery("#speakerForm").serializeArray().forEach(function (item) {
             formData[item.name] = isNaN(item.value) ? item.value : parseFloat(item.value);
         });
-
+    
+        // Include calculated fields in form data
+        jQuery("#cms, #mms, #rms, #bl, #le").each(function () {
+            formData[this.id] = parseFloat(jQuery(this).val()) || null;
+        });
+    
         // Additional fields
         var scenario = formData.scenario;
         if (scenario === "sealed" || scenario === "ported") {
-            formData.Vb = parseFloat(jQuery("#Vb").val()) || null;
+            formData.lx = parseFloat(jQuery("#lx").val()) || null;
+            formData.ly = parseFloat(jQuery("#ly").val()) || null;
+            formData.lz = parseFloat(jQuery("#lz").val()) || null;
         }
         if (scenario === "ported") {
             formData.port_length = parseFloat(jQuery("#port_length").val()) || null;
             formData.port_diameter = parseFloat(jQuery("#port_diameter").val()) || null;
         }
-
+    
         console.log("Form Data:", formData);
-
+    
         // Save suggestions
         saveSuggestions(formData);
-
+    
         // Show loading state
         jQuery("#toggleFormBtn").prop("disabled", true).text("Calculating...");
-
+    
         // AJAX
         var csrfToken = jQuery('meta[name="csrf-token"]').attr('content');
         jQuery.ajax({
@@ -71,15 +77,15 @@ jQuery(document).ready(function () {
                     jQuery("#errorMessage").removeClass("d-none").text(response.error);
                 } else {
                     console.log("Server Response:", response);
-
+        
                     // Update SPL chart
                     updateChart(response.frequencies, response.spl, scenario);
-
-                    // If we also have "impedance", update the Impedance chart
-                    if (response.impedance && response.f_over_fs && response.Re) {
+        
+                    // If impedance data is present, update the Impedance chart
+                    if (response.impedance && response.frequencies) {
                         updateImpedanceChart(response, scenario);
                     } else {
-                        console.error("Missing impedance or f_over_fs data in response.");
+                        console.error("Missing impedance or frequency data in response.");
                     }
                 }
             },
@@ -163,29 +169,25 @@ jQuery(document).ready(function () {
         responseChart.update();
     }
 
-    // Impedance vs (f/fs)
     function updateImpedanceChart(response, scenario) {
         console.log("Updating Impedance Chart:", scenario);
-
-        // Extract normalized frequency (f/fs) and impedance data
-        var scaledFreq = response.f_over_fs;  // array of f/fs
-        var impData = response.impedance;     // { scenario: [Z array] }
-
+    
+        // Extract frequency (Hz) and impedance data
+        var frequencies = response.frequencies;
+        var impData = response.impedance;  // { scenario: [Z array] }
+    
         // Validate data
-        if (!Array.isArray(scaledFreq) || !impData || !impData[scenario]) {
+        if (!Array.isArray(frequencies) || !impData || !impData[scenario]) {
             console.error("Invalid data for Impedance chart update.");
             return;
         }
-
-        // Normalize impedance to driver's DC resistance (Re)
-        var normalizedImpedance = impData[scenario].map(z => z / response.Re);
-
-        // Create data points for the chart
-        var dataPoints = scaledFreq.map((sf, i) => ({ x: sf, y: normalizedImpedance[i] }));
-
+    
+        // Create data points for the chart (No normalization needed)
+        var dataPoints = frequencies.map((freq, i) => ({ x: freq, y: impData[scenario][i] }));
+    
         // Get chart context
         var ctx = document.getElementById("impedanceChart").getContext("2d");
-
+    
         // Initialize the chart if it doesn't exist
         if (!impedanceChart) {
             impedanceChart = new Chart(ctx, {
@@ -198,18 +200,18 @@ jQuery(document).ready(function () {
                         x: {
                             type: "logarithmic",
                             position: "bottom",
-                            title: { display: true, text: "f / fs" },
-                            min: 0.05,
-                            max: 1000,
+                            title: { display: true, text: "Frequency (Hz)" },
+                            min: 20,
+                            max: 20000,
                             ticks: {
                                 callback: function (value) {
-                                    return Number(value).toFixed(2);
+                                    return Number(value).toFixed(0);
                                 }
                             }
                         },
                         y: {
                             type: "linear",
-                            title: { display: true, text: "Impedance (Z/Re)" },
+                            title: { display: true, text: "Impedance (Ohms)" }, // UPDATED Y-AXIS LABEL
                             ticks: { beginAtZero: false }
                         }
                     },
@@ -222,11 +224,11 @@ jQuery(document).ready(function () {
                 }
             });
         }
-
+    
         // Update or add the dataset for the current scenario
         var labelName = scenario.replace("_", " ");
         var dsIndex = impedanceChart.data.datasets.findIndex(ds => ds.label === labelName);
-
+    
         if (dsIndex === -1) {
             impedanceChart.data.datasets.push({
                 label: labelName,
@@ -243,10 +245,65 @@ jQuery(document).ready(function () {
         } else {
             impedanceChart.data.datasets[dsIndex].data = dataPoints;
         }
-
+    
         // Update the chart
         impedanceChart.update();
     }
+    
+    // Track overridden fields
+    let overriddenFields = {};
+
+    // Function to calculate Physical Parameters with correct unit conversions
+    function calculatePhysicalParameters() {
+        // Constants
+        const SOUND_CELERITY = 343;  // Speed of sound in air (m/s)
+        const AIR_DENSITY = 1.18;  // Air density (kg/m³)
+        const PI = Math.PI;
+
+        // Get input values from form
+        let Re = parseFloat(jQuery("#re").val());
+        let Qes = parseFloat(jQuery("#qes").val());
+        let Qms = parseFloat(jQuery("#qms").val());
+        let fs = parseFloat(jQuery("#fs").val());
+        let Sd = parseFloat(jQuery("#sd").val()) / 10000; // Convert cm² to m²
+        let Vas = parseFloat(jQuery("#vas").val()) / 1000; // Convert L to m³
+
+        // Check if all required values are present
+        if (isNaN(Re) || isNaN(Qes) || isNaN(Qms) || isNaN(fs) || isNaN(Sd) || isNaN(Vas)) {
+            console.log("Waiting for all Thiele-Small parameters to be entered...");
+            return;
+        }
+
+        // Calculate Cms (Compliance of Suspension)
+        let Cms = (Vas / (Sd ** 2 * AIR_DENSITY * SOUND_CELERITY ** 2)) * 1000000; // Convert from m/N to µm/N
+
+        // Calculate Mms (Moving Mass)
+        let Mms = (1 / (((2 * PI * fs) ** 2) * (Cms / 1000))) * 1000; // Convert from kg to grams
+
+        // Calculate Rms (Mechanical Resistance)
+        let Rms = (1 / Qms) * Math.sqrt((Mms / 1000) / (Cms / 1000)); // Convert Mms and Cms to SI for calculation
+
+        // Calculate BL (Force Factor)
+        let BL = Math.sqrt(Re / (2 * PI * fs * Qes * Qms * (Cms / 1000))); // Convert Cms to SI for calculation
+
+        // Estimate Le (Voice Coil Inductance)
+        let Le = (Re / (2 * PI * fs)) * 1000; // Convert H to mH
+
+        // Update form fields with calculated values (only if not overridden by the user)
+        if (!overriddenFields.cms) jQuery("#cms").val(Cms.toFixed(6));
+        if (!overriddenFields.mms) jQuery("#mms").val(Mms.toFixed(6));
+        if (!overriddenFields.rms) jQuery("#rms").val(Rms.toFixed(6));
+        if (!overriddenFields.bl) jQuery("#bl").val(BL.toFixed(6));
+        if (!overriddenFields.le) jQuery("#le").val(Le.toFixed(6));
+    }
+
+    // Attach event listeners to Thiele-Small parameters to trigger recalculation
+    jQuery("#re, #qes, #qms, #fs, #sd, #vas").on("input", calculatePhysicalParameters);
+
+    // Listen for user input on calculated fields to mark them as overridden
+    jQuery("#cms, #mms, #rms, #bl, #le").on("input", function () {
+        overriddenFields[this.id] = true;
+    });
 
     function saveSuggestions(formData) {
         var savedSuggestions = JSON.parse(localStorage.getItem("speakerFormSuggestions")) || {};
