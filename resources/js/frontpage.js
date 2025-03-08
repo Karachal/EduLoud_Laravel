@@ -39,7 +39,7 @@ jQuery(document).ready(function () {
         });
     
         // Include calculated fields in form data
-        jQuery("#cms, #mms, #rms, #bl, #le").each(function () {
+        jQuery("#qts, #cms, #mms, #rms, #bl, #le, #z").each(function () {
             formData[this.id] = parseFloat(jQuery(this).val()) || null;
         });
     
@@ -127,6 +127,8 @@ jQuery(document).ready(function () {
                             min: 20,
                             max: 20000,
                             ticks: {
+                                autoSkip: true,    // Automatically skips overlapping ticks
+                                maxTicksLimit: 20, // Limits the number of ticks to 10
                                 callback: function(value) {
                                     return Number(value).toFixed(0);
                                 }
@@ -134,6 +136,8 @@ jQuery(document).ready(function () {
                         },
                         y: {
                             title: { display: true, text: "SPL (dB)" },
+                            // min: 40,
+                            // max: 100,
                             ticks: { beginAtZero: false }
                         }
                     },
@@ -157,8 +161,8 @@ jQuery(document).ready(function () {
                 borderColor: scenario === "open_air" ? "blue"
                           : scenario === "sealed"  ? "green"
                           : "red",
-                borderWidth: 1,
-                pointRadius: 1,
+                borderWidth: 0.5,
+                pointRadius: 0.5,
                 fill: false,
                 tension: 0.4
             });
@@ -168,7 +172,7 @@ jQuery(document).ready(function () {
 
         responseChart.update();
     }
-
+    // IMPEDANCE vs frequency(Hz)
     function updateImpedanceChart(response, scenario) {
         console.log("Updating Impedance Chart:", scenario);
     
@@ -204,6 +208,8 @@ jQuery(document).ready(function () {
                             min: 20,
                             max: 20000,
                             ticks: {
+                                autoSkip: true,    // Automatically skips overlapping ticks
+                                maxTicksLimit: 20, // Limits the number of ticks to 20
                                 callback: function (value) {
                                     return Number(value).toFixed(0);
                                 }
@@ -237,8 +243,8 @@ jQuery(document).ready(function () {
                           : scenario === "sealed"  ? "purple"
                           : scenario === "ported"  ? "green"
                           : "brown",
-                borderWidth: 1,
-                pointRadius: 1,
+                borderWidth: 0.5,
+                pointRadius: 0.5,
                 fill: false,
                 tension: 0.4
             });
@@ -256,7 +262,7 @@ jQuery(document).ready(function () {
     // Function to calculate Physical Parameters with correct unit conversions
     function calculatePhysicalParameters() {
         // Constants
-        const SOUND_CELERITY = 343;  // Speed of sound in air (m/s)
+        const SOUND_CELERITY = 344.8;  // Speed of sound in air (m/s)
         const AIR_DENSITY = 1.18;  // Air density (kg/m³)
         const PI = Math.PI;
 
@@ -274,34 +280,40 @@ jQuery(document).ready(function () {
             return;
         }
 
+        // Calculate Total Q Factor
+        let Qts = (Qes * Qms) / (Qes + Qms);
+
         // Calculate Cms (Compliance of Suspension)
-        let Cms = (Vas / (Sd ** 2 * AIR_DENSITY * SOUND_CELERITY ** 2)) * 1000000; // Convert from m/N to µm/N
+        let Cms = (Vas / (Sd ** 2 * AIR_DENSITY * SOUND_CELERITY ** 2));
 
         // Calculate Mms (Moving Mass)
-        let Mms = (1 / (((2 * PI * fs) ** 2) * (Cms / 1000))) * 1000; // Convert from kg to grams
+        let Mms = (1 / (((2 * PI * fs) ** 2) * Cms));
 
         // Calculate Rms (Mechanical Resistance)
-        let Rms = (1 / Qms) * Math.sqrt((Mms / 1000) / (Cms / 1000)); // Convert Mms and Cms to SI for calculation
+        let Rms = (1 / Qms) * Math.sqrt(Mms / Cms); 
 
         // Calculate BL (Force Factor)
-        let BL = Math.sqrt(Re / (2 * PI * fs * Qes * Qms * (Cms / 1000))); // Convert Cms to SI for calculation
+        let BL = Math.sqrt(Re / (2 * PI * fs * Qes * Cms));
 
-        // Estimate Le (Voice Coil Inductance)
-        let Le = (Re / (2 * PI * fs)) * 1000; // Convert H to mH
+        Cms = Cms * 1000000; // convert from m/N to μm/N
+        Mms = Mms * 1000; //convert from kg to g
+        
 
         // Update form fields with calculated values (only if not overridden by the user)
+        if (!overriddenFields.qts) jQuery("#qts").val(Qts.toFixed(6));
         if (!overriddenFields.cms) jQuery("#cms").val(Cms.toFixed(6));
         if (!overriddenFields.mms) jQuery("#mms").val(Mms.toFixed(6));
         if (!overriddenFields.rms) jQuery("#rms").val(Rms.toFixed(6));
         if (!overriddenFields.bl) jQuery("#bl").val(BL.toFixed(6));
-        if (!overriddenFields.le) jQuery("#le").val(Le.toFixed(6));
+        // if (!overriddenFields.le) jQuery("#le").val(Le.toFixed(6));
     }
 
     // Attach event listeners to Thiele-Small parameters to trigger recalculation
     jQuery("#re, #qes, #qms, #fs, #sd, #vas").on("input", calculatePhysicalParameters);
 
     // Listen for user input on calculated fields to mark them as overridden
-    jQuery("#cms, #mms, #rms, #bl, #le").on("input", function () {
+    //DELETED #le
+    jQuery("#qts, #cms, #mms, #rms, #bl").on("input", function () {
         overriddenFields[this.id] = true;
     });
 

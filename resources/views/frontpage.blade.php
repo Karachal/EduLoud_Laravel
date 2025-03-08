@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Speaker Response Calculator</title>
+    <title>EduLoud 2025</title>
 
     <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -31,7 +31,7 @@
 </head>
 <body>
     <div class="container">
-        <h2 class="mb-4 text-center">Speaker Response Calculator</h2>
+        <h2 class="mb-4 text-center">EduLoud 2025</h2>
 
         <div class="text-center">
             <img id="formIcon" src="/images/speaker_icon.webp" alt="Speaker Icon">
@@ -43,21 +43,35 @@
 
         <div class="form-container" id="speakerFormContainer">
             <form id="speakerForm">
+                <!-- Include a style block to define the math calligraphy font and increased font sizes -->
+                <style>
+                    .math-font {
+                        font-family: 'STIX Two Math', 'Latin Modern Math', Cambria Math, serif;
+                        /* Increase the overall font size */
+                        font-size: 1.2rem;
+                    }
+                    .math-calligraphy {
+                        font-family: 'Brush Script MT', 'Great Vibes', cursive;
+                        /* Optionally, increase the calligraphic letters further */
+                        font-size: 1.3rem;
+                    }
+                </style>
+
                 <div class="form-row">
                     <!-- Thiele-Small Parameters Section -->
                     <div class="form-section form-section-divider">
-                        <h5 class="text-center">Thiele-Small Parameters</h5>
+                        <h5 class="text-center fw-bold math-font">Thiele-Small Parameters</h5>
                         <div class="row">
                             @foreach ([
-                                're' => 'R<sub>E</sub> (Ω)',
-                                'qes' => 'Q<sub>es</sub>',
-                                'qms' => 'Q<sub>ms</sub>',
-                                'fs' => 'f<sub>s</sub> (Hz)',
-                                'sd' => 'S<sub>d</sub> (cm²)',  
-                                'vas' => 'V<sub>as</sub> (L)'   
+                                're'  => '<i>R</i><sub><span style="font-style: normal;">E</span></sub>&thinsp;( <span style="font-style: normal;">Ω</span> )',
+                                'qes' => '<i>Q</i><sub><span style="font-style: normal;">es</span></sub>',
+                                'qms' => '<i>Q</i><sub><span style="font-style: normal;">ms</span></sub>',
+                                'fs'  => '<i>f</i><sub><span style="font-style: normal;">s</span></sub>&thinsp;( <span style="font-style: normal;">Hz</span> )',
+                                'sd'  => '<i>S</i><sub><span style="font-style: normal;">d</span></sub>&thinsp;( <span style="font-style: normal;">cm²</span> )',
+                                'vas' => '<i>V</i><sub><span style="font-style: normal;">as</span></sub>&thinsp;( <span style="font-style: normal;">L</span> )'
                             ] as $id => $label)
                                 <div class="col-md-12">
-                                    <label for="{{ $id }}" class="form-label">{!! $label !!}</label>  <!-- Allow raw HTML rendering -->
+                                    <label for="{{ $id }}" class="form-label math-font">{!! $label !!}</label>
                                     <input type="number" class="form-control" id="{{ $id }}" name="{{ $id }}" list="{{ $id }}-suggestions" required step="any">
                                     <datalist id="{{ $id }}-suggestions"></datalist>
                                 </div>
@@ -65,20 +79,21 @@
                         </div>
                     </div>
 
-
                     <!-- Physical Parameters Section (Auto-Calculated) -->
                     <div class="form-section">
-                        <h5 class="text-center">Calculated Physical Parameters</h5>
+                        <h5 class="text-center fw-bold math-font">Calculated Physical Parameters</h5>
                         <div class="row">
                             @foreach ([
-                                'cms' => 'C<sub>ms</sub> (µm/N)',
-                                'mms' => 'M<sub>ms</sub> (g)',
-                                'rms' => 'R<sub>ms</sub> (Ns/m)',
-                                'bl' => 'B<sub>L</sub> (Tm)',
-                                'le' => 'L<sub>e</sub> (mH)'
+                                'qts' => '<i>Q</i><sub><span style="font-style: normal;">ts</span></sub>',
+                                'cms' => '<i>C</i><sub><span style="font-style: normal;">ms</span></sub>&thinsp;( <span style="font-style: normal;">µm/N</span> )',
+                                'mms' => '<i>M</i><sub><span style="font-style: normal;">ms</span></sub>&thinsp;( <span style="font-style: normal;">g</span> )',
+                                'rms' => '<i>R</i><sub><span style="font-style: normal;">ms</span></sub>&thinsp;( <span style="font-style: normal;">Ns/m</span> )',
+                                'bl'  => '<i>B</i><sub><span style="font-style: normal;">L</span></sub>&thinsp;( <span style="font-style: normal;">Tm</span> )',
+                                'le'  => '<i>L</i><sub><span style="font-style: normal;">e</span></sub>&thinsp;( <span style="font-style: normal;">mH</span> )',
+                                'z'   => '<i>Z</i>&thinsp;( <span style="font-style: normal;">Ω</span> )'
                             ] as $id => $label)
                                 <div class="col-md-12">
-                                    <label for="{{ $id }}" class="form-label">{!! $label !!}</label>  <!-- Render subscripts correctly -->
+                                    <label for="{{ $id }}" class="form-label math-font">{!! $label !!}</label>
                                     <input type="number" class="form-control" id="{{ $id }}" name="{{ $id }}" required step="any" data-calculated="true">
                                 </div>
                             @endforeach
@@ -89,11 +104,11 @@
                 <!-- Scenario Selection -->
                 <div class="row mt-3">
                     <div class="col-md-6">
-                        <label for="scenario" class="form-label">Scenario</label>
-                        <select class="form-control" id="scenario" name="scenario" onchange="toggleBoxFields()">
-                            <option value="open_air">Open Air</option>
-                            <option value="sealed">Sealed</option>
-                            <option value="ported">Ported</option>
+                        <label for="scenario" class="form-label fw-bold math-font">Type of Analysis</label>
+                        <select class="form-control math-font" id="scenario" name="scenario" onchange="toggleBoxFields()">
+                            <option value="open_air">Infinite Baffle</option>
+                            <option value="sealed">Closed Box Baffle</option>
+                            <option value="ported">Bass-reflex Baffle</option>
                         </select>
                     </div>
                 </div>
@@ -101,18 +116,24 @@
                 <!-- Box Parameters -->
                 <div id="boxParams" class="row mt-3" style="display: none;">
                     <div class="col-12">
-                        <label class="form-label fw-bold">Box Dimensions</label>
+                        <label class="form-label fw-bold math-font">Box Dimensions</label>
                     </div>
                     <div class="col-md-4">
-                        <label for="lx" class="form-label">l<sub>x</sub> (cm)</label>
+                        <label for="lx" class="form-label math-font">
+                            <i>l</i><sub><span style="font-style: normal;">x</span></sub>&thinsp;( <span style="font-style: normal;">cm</span> )
+                        </label>
                         <input type="number" class="form-control" id="lx" name="lx" step="0.1">
                     </div>
                     <div class="col-md-4">
-                        <label for="ly" class="form-label">l<sub>y</sub> (cm)</label>
+                        <label for="ly" class="form-label math-font">
+                            <i>l</i><sub><span style="font-style: normal;">y</span></sub>&thinsp;( <span style="font-style: normal;">cm</span> )
+                        </label>
                         <input type="number" class="form-control" id="ly" name="ly" step="0.1">
                     </div>
                     <div class="col-md-4">
-                        <label for="lz" class="form-label">l<sub>z</sub> (cm)</label>
+                        <label for="lz" class="form-label math-font">
+                            <i>l</i><sub><span style="font-style: normal;">z</span></sub>&thinsp;( <span style="font-style: normal;">cm</span> )
+                        </label>
                         <input type="number" class="form-control" id="lz" name="lz" step="0.1">
                     </div>
                 </div>
@@ -120,30 +141,31 @@
                 <!-- Ported Box Parameters -->
                 <div id="portedParams" class="row mt-3" style="display: none;">
                     <div class="col-md-6">
-                        <label for="port_length" class="form-label">Port length (cm)</label> <!-- Port Length -->
+                        <label for="port_length" class="form-label math-font">Port length (cm)</label>
                         <input type="number" class="form-control" id="port_length" name="port_length" list="port_length-suggestions" step="0.1">
                         <datalist id="port_length-suggestions"></datalist>
                     </div>
                     <div class="col-md-6">
-                        <label for="port_diameter" class="form-label">Port diameter (cm)</label> <!-- Port Diameter -->
+                        <label for="port_diameter" class="form-label math-font">Port diameter (cm)</label>
                         <input type="number" class="form-control" id="port_diameter" name="port_diameter" list="port_diameter-suggestions" step="0.1">
                         <datalist id="port_diameter-suggestions"></datalist>
                     </div>
                 </div>
-                
+
                 <div class="mt-4 text-center">
-                    <button type="submit" class="btn btn-primary">Calculate Response</button>
-                    <button type="button" id="clearChartBtn" class="btn btn-danger">Clear Chart</button>
+                    <button type="submit" class="btn btn-primary math-font">Calculate Response</button>
+                    <button type="button" id="clearChartBtn" class="btn btn-danger math-font">Clear Chart</button>
                 </div>
             </form>
         </div>
 
+
         <!-- Charts -->
         <div class="mt-5">
-            <canvas id="responseChart"></canvas>
+            <canvas id="responseChart" style="max-width: 800px; margin: auto;"></canvas>
         </div>
         <div class="mt-5">
-            <canvas id="impedanceChart"></canvas>
+            <canvas id="impedanceChart" style="max-width: 800px; margin: auto;"></canvas>
         </div>
     </div>
 

@@ -24,12 +24,12 @@ class SpeakerController extends Controller
             'vas' => 'required|numeric', // Equivalent volume of compliance (m³)
             're' => 'required|numeric', // Voice coil resistance (Ω)
             'le' => 'required|numeric', // Voice coil inductance (H)
-            // 'eg' => 'required|numeric', // Voice coil height (V)
             'cms' => 'required|numeric', // Mechanical compliance
             'mms' => 'required|numeric', // Mechanical mass (g)
             'bl' => 'required|numeric', // Force factor (Tm)
             'sd' => 'required|numeric', // Diaphragm surface area (m²)
             'rms' => 'required|numeric',
+            'z' => 'required|numeric',
             'scenario' => 'required|string|in:open_air,sealed,ported', // Box scenario
         ]);
 
