@@ -169,8 +169,8 @@
                 </div>
 
                 <div class="mt-4 text-center">
-                    <button type="submit" class="btn btn-primary math-font">Calculate Response</button>
-                    <button type="button" id="clearChartBtn" class="btn btn-danger math-font">Clear Chart</button>
+                    <button type="submit" class="btn btn-primary math-font">Calculate Diagrams</button>
+                    <button type="button" id="clearChartBtn" class="btn btn-danger math-font">Clear Diagrams</button>
                 </div>
             </form>
         </div>
@@ -195,4 +195,8 @@
 
     <script src="{{ asset('js/frontpage.js') }}"></script>
 </body>
+<footer class="text-center mt-5">
+  <p>&copy; Εργαστηριο Ηλεκτρακουστικής και Τηλεοπτικών Συστημάτων ΑΠΘ</p>
+  <p>&copy; Laboratory of Electroacoustics and Television Systems, Aristotle University of Thessaloniki</p>
+</footer>
 </html>

@@ -34,7 +34,7 @@ jQuery(document).ready(function () {
         jQuery("#sd").val(selectedSpeaker.sd);
         jQuery("#z").val(selectedSpeaker.z);
 
-        // 🔥 Trigger Qts Calculation
+        //Trigger Qts Calculation
         calculatePhysicalParameters();
     });
     // Toggle form visibility
@@ -268,7 +268,7 @@ jQuery(document).ready(function () {
                         },
                         y: {
                             type: "linear",
-                            title: { display: true, text: "Impedance (Ohms)" }, // UPDATED Y-AXIS LABEL
+                            title: { display: true, text: "Impedance (Ω)" }, // UPDATED Y-AXIS LABEL
                             ticks: { beginAtZero: false }
                         }
                     },

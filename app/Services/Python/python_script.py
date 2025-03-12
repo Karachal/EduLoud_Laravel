@@ -664,17 +664,7 @@ class PortedBoxEnclosure:
 def calculate_speaker_response(parameters):
     try:
         scenario = parameters["scenario"]
-        frequencies = np.logspace(np.log10(20), np.log10(20000), 957)
-        # # Define parameters
-        # start = 20           # starting frequency in Hz
-        # end = 20000          # ending frequency in Hz
-        # steps_per_octave = 96
-        # # Calculate the number of octaves between start and end
-        # num_octaves = np.log2(end / start)
-        # # Determine the total number of steps (using floor to ensure we do not exceed 'end')
-        # total_steps = int(np.floor(num_octaves * steps_per_octave)) + 1
-        # # Generate the frequency array: each step increases frequency by a factor of 2^(1/steps_per_octave)
-        # frequencies = start * 2 ** (np.arange(total_steps) / steps_per_octave)
+        frequencies = np.logspace(np.log10(20), np.log10(20000), 1000)
 
         loudspeaker = Loudspeaker(parameters)
 
