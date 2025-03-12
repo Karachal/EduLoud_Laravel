@@ -37,7 +37,18 @@
             <img id="formIcon" src="/images/speaker_icon.webp" alt="Speaker Icon">
         </div>
 
-        <button class="btn btn-secondary toggle-button" id="toggleFormBtn">Hide Form</button>
+        <!-- <button class="btn btn-secondary toggle-button" id="toggleFormBtn">Hide Form</button>
+        <button type="button" id="clearFormBtn" class="btn btn-secondary">Clear Form</button> -->
+        <button class="btn btn-secondary toggle-button d-block mb-2" id="toggleFormBtn">Hide Form</button>
+        <button type="button" id="clearFormBtn" class="btn d-block"
+            style="background-color: #FFA07A; border-color: #E9967A; color: white;"
+            onmouseover="this.style.backgroundColor='#FF7F50'; this.style.borderColor='#E67E22';"
+            onmouseout="this.style.backgroundColor='#FFA07A'; this.style.borderColor='#E9967A';">
+            Clear Form
+        </button>
+
+
+
 
         <div id="errorMessage" class="alert alert-danger d-none"></div>
 
@@ -56,7 +67,12 @@
                         font-size: 1.3rem;
                     }
                 </style>
-
+                <div class="form-group">
+                    <label for="speakerPreset">Select a Speaker:</label>
+                    <select id="speakerPreset" class="form-control">
+                        <option value="">-- Speaker Examples --</option>
+                    </select>
+                </div>
                 <div class="form-row">
                     <!-- Thiele-Small Parameters Section -->
                     <div class="form-section form-section-divider">
@@ -88,7 +104,7 @@
                                 'cms' => '<i>C</i><sub><span style="font-style: normal;">ms</span></sub>&thinsp;( <span style="font-style: normal;">µm/N</span> )',
                                 'mms' => '<i>M</i><sub><span style="font-style: normal;">ms</span></sub>&thinsp;( <span style="font-style: normal;">g</span> )',
                                 'rms' => '<i>R</i><sub><span style="font-style: normal;">ms</span></sub>&thinsp;( <span style="font-style: normal;">Ns/m</span> )',
-                                'bl'  => '<i>B</i><sub><span style="font-style: normal;">L</span></sub>&thinsp;( <span style="font-style: normal;">Tm</span> )',
+                                'bl'  => '<i>Bl</i> ( <span style="font-style: normal;">Tm</span> )',
                                 'le'  => '<i>L</i><sub><span style="font-style: normal;">e</span></sub>&thinsp;( <span style="font-style: normal;">mH</span> )',
                                 'z'   => '<i>Z</i>&thinsp;( <span style="font-style: normal;">Ω</span> )'
                             ] as $id => $label)

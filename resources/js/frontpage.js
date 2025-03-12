@@ -1,14 +1,65 @@
 jQuery(document).ready(function () {
     var responseChart;   // For SPL vs freq(Hz)
     var impedanceChart;  // For Impedance vs (f/fs)
+    var speakers = [];
 
     restoreSuggestions();
 
+    // Load speaker presets from Laravel's JSON route
+    jQuery.getJSON("/speakers", function (data) {
+        speakers = data;
+        var dropdown = jQuery("#speakerPreset");
+        data.forEach(function (speaker) {
+            dropdown.append(new Option(speaker.name, JSON.stringify(speaker)));
+        });
+    });
+
+    // When the user selects a speaker, populate the form with its values
+    jQuery("#speakerPreset").on("change", function () {
+        var selectedSpeaker = JSON.parse(jQuery(this).val() || "{}");
+
+        if (!selectedSpeaker.name) return;
+
+        // Fill the form fields with the selected speaker data
+        jQuery("#re").val(selectedSpeaker.re);
+        jQuery("#le").val(selectedSpeaker.le);
+        jQuery("#qes").val(selectedSpeaker.qes);
+        jQuery("#qms").val(selectedSpeaker.qms);
+        jQuery("#fs").val(selectedSpeaker.fs);
+        jQuery("#vas").val(selectedSpeaker.vas);
+        jQuery("#cms").val(selectedSpeaker.cms);
+        jQuery("#mms").val(selectedSpeaker.mms);
+        jQuery("#rms").val(selectedSpeaker.rms);
+        jQuery("#bl").val(selectedSpeaker.bl);
+        jQuery("#sd").val(selectedSpeaker.sd);
+        jQuery("#z").val(selectedSpeaker.z);
+
+        // 🔥 Trigger Qts Calculation
+        calculatePhysicalParameters();
+    });
     // Toggle form visibility
     jQuery('#toggleFormBtn').on('click', function () {
         jQuery('#speakerFormContainer').toggle();
         var isVisible = jQuery('#speakerFormContainer').is(':visible');
         jQuery('#toggleFormBtn').text(isVisible ? 'Hide Form' : 'Show Form');
+    });
+
+    // Function to clear all form fields
+    jQuery("#clearFormBtn").on("click", function () {
+        jQuery("#speakerForm")[0].reset(); // Reset all fields to default
+
+        // Also clear manually filled calculated fields
+        jQuery("#qts").val("");
+        jQuery("#cms").val("");
+        jQuery("#mms").val("");
+        jQuery("#rms").val("");
+        jQuery("#bl").val("");
+        // Reset Type of Analysis dropdown
+        jQuery("#scenario").val("open_air").trigger("change"); // Ensures the dropdown resets and triggers onchange event
+
+        // Hide additional fields (Sealed & Ported box parameters)
+        jQuery("#boxParams").hide();
+        jQuery("#portedParams").hide();
     });
 
     jQuery('#speakerForm').on('submit', function (event) {

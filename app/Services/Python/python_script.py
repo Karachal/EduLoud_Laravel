@@ -1,11 +1,11 @@
 import numpy as np
-from scipy.special import jv
+from scipy.special import jv, hankel2, lpmv, spherical_jn, spherical_yn
 from scipy.special import struve
 from scipy.special import gamma, hyp2f1, binom, factorial
+from scipy.integrate import quad
 import mpmath as mp
 import json
 import sys
-from functools import lru_cache
 
 # Constants
 SOUND_CELERITY = 344.8  # Speed of sound in air, m/s
@@ -28,10 +28,6 @@ A3 = 0.0858
 A4 = 0.175
 B3 = 0.7
 B4 = 0.59
-
-def complex_to_dict(z):
-    """Convert a complex number to a dictionary with real and imaginary parts."""
-    return {"real": np.real(z).item(), "imaginary": np.imag(z).item()}
 
 class Loudspeaker:
     """Loudspeaker model with Thiele-Small parameters."""
@@ -268,6 +264,7 @@ class PortedBoxEnclosure:
         self.port_length = port_length * 0.01  # Convert cm to m
         self.port_diameter = port_diameter * 0.01  # Convert cm to m
         self.truncation_limit = 10
+        self.r = 0.15
 
         # Calculate box volume (Vb)
         self.Vb = self.lx * self.ly * self.lz  # Box volume in m³
@@ -413,6 +410,70 @@ class PortedBoxEnclosure:
 
         return first_term + second_term
     
+    # TEST WITH NOT SIMPLIFIED VERSIONS
+    def integrand(self, thita, n, k):
+        """Function to calculate the integrand"""
+        r1 = (self.r * np.cos(self.lsp.a)) / np.cos(thita)
+        hankel = spherical_jn(n, k * r1) - 1j * spherical_yn(n, k * r1)
+        return (hankel) * lpmv(0, n, np.cos(thita)) * r1**2 * np.tan(thita)
+    def calculate_circular_Za1(self, f):
+        """Calculate the radiation impedance of a piston in a cap."""
+        k = self.lsp.calculate_wave_number(f)
+        alpha = np.arcsin(self.lsp.a / self.r)
+        Z_a1 = (2 * R_0 * SOUND_CELERITY) / (self.r**2 * np.sin(alpha) ** 2)
+        sum_n = 0
+        for n in range(0, self.truncation_limit):
+            if n == 0:
+                An = (
+                    1j
+                    * k
+                    * (-1)
+                    * np.sin(alpha)
+                    / (k * (-(1) * hankel2(1, k * self.r)))
+                )
+            elif n == 1:
+                An = (
+                    1j
+                    * k
+                    * (np.cos(alpha) ** 3 - 1)
+                    / (
+                        k
+                        / (2 * 1 + 1)
+                        * (
+                            1 * hankel2(1 - 1, k * self.r)
+                            - (1 + 1) * hankel2(1 + 1, k * self.r)
+                        )
+                    )
+                )
+            else:
+                An = (
+                    1j
+                    * k
+                    * (2 * n + 1)
+                    * np.sin(alpha)
+                    * (
+                        np.sin(alpha) * lpmv(0, n, np.cos(alpha))
+                        + np.cos(alpha) * lpmv(1, n, np.cos(alpha))
+                    )
+                    / (
+                        2
+                        * (n - 1)
+                        * (n + 2)
+                        * (
+                            k
+                            / (2 * n + 1)
+                            * (
+                                n * hankel2(n - 1, k * self.r)
+                                - (n + 1) * hankel2(n + 1, k * self.r)
+                            )
+                        )
+                    )
+                )
+            term3, _ = quad(self.integrand, 0, alpha, args=(n, k))
+            sum_n += An * term3
+        Z_a1 *= sum_n
+        return Z_a1
+    
 
     def calculate_impedance(self, f):    
         """Calculate the system response for a single speaker."""
@@ -440,6 +501,8 @@ class PortedBoxEnclosure:
         Zab = self.calculate_simplified_box_impedance_Zab(f, B=0.3)
 
         Z_a3 = self.calculate_simplified_diaphragm_radiation_impedance(f, self.lsp.a)
+        #TEST INSTEAD Z_a3 with extensive type
+        Z_a1 = self.calculate_circular_Za1(f)
 
         # Calculate the leakage resistance
         Ral = self.calculate_leakage_resistance()
@@ -461,7 +524,7 @@ class PortedBoxEnclosure:
         E = np.array([[0, self.lsp.Bl], [1 / self.lsp.Bl, 0]])
         D = np.array([[1, Z_md], [0, 1]])
         M = np.array([[self.lsp.Sd, 0], [0, 1 / self.lsp.Sd]])
-        F = np.array([[1, Z_a3], [0, 1]])
+        F = np.array([[1, Z_a1], [0, 1]])
         L = np.array([[1, 0], [1 / Ral, 1]])
         B = np.array([[1, 0], [1 / Zab, 1]])  # For simplified method
         P = np.array(
