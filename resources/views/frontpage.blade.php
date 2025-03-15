@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/eduloud_2_cutted.png') }}">
     <title>EduLoud 2025</title>
 
     <!-- Bootstrap -->
@@ -31,10 +32,9 @@
 </head>
 <body>
     <div class="container">
-        <h2 class="mb-4 text-center">EduLoud 2025</h2>
-
-        <div class="text-center">
-            <img id="formIcon" src="/images/speaker_icon.webp" alt="Speaker Icon">
+        <div class="text-center" style="text-align: center;">
+            <img id="formIcon" src="/images/edulad 3.png" alt="Speaker Icon" 
+                style="width: 500px; height: auto; max-width: 100%;">
         </div>
 
         <!-- <button class="btn btn-secondary toggle-button" id="toggleFormBtn">Hide Form</button>
