@@ -215,7 +215,7 @@
     <script src="{{ asset('js/frontpage.js') }}"></script>
 </body>
 <footer class="text-center mt-5">
-  <p>&copy; Εργαστηριο Ηλεκτρακουστικής και Τηλεοπτικών Συστημάτων ΑΠΘ</p>
+  <p>&copy; Εργαστήριο Ηλεκτρακουστικής και Τηλεοπτικών Συστημάτων ΑΠΘ</p>
   <p>&copy; Laboratory of Electroacoustics and Television Systems, Aristotle University of Thessaloniki</p>
 </footer>
 </html>

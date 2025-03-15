@@ -432,7 +432,7 @@ jQuery(document).ready(function () {
         // Box volume (Vb) in cubic meters
         let Vb = lx * ly * lz;
 
-        // ✅ Directly calculate Sp, Vp, and Vab inside this function
+        //  Directly calculate Sp, Vp, and Vab inside this function
         let Sp = portSection; // Port section area in m² (already converted)
         let Vp = Sp * portLength; // Port volume in m³
         let Vab = Vb - Vp; // Effective box volume in m³
@@ -448,13 +448,13 @@ jQuery(document).ready(function () {
             return;
         }
 
-        // ✅ Correct Fb formula (NO ROUNDING)
+        //  Correct Fb formula (NO ROUNDING)
         let fb = (344.8 / (2 * Math.PI * portLength)) * Math.sqrt(Vp / Vab);
 
-        console.log("Raw Fb:", fb); // ✅ Debugging message
+        console.log("Raw Fb:", fb); //  Debugging message
 
-        // ✅ Update the fb field with the raw value
-        jQuery("#fb").val(fb);
+        //  Update the fb field with the raw value
+        jQuery("#fb").val(roundToSignificantFigures(fb, 3));;
     }
 
     // Ensure Fb is calculated when inputs change
@@ -575,6 +575,10 @@ jQuery(document).ready(function () {
         if (impedanceChart) {
             impedanceChart.data.datasets = [];
             impedanceChart.update();
+        }
+        if (portDiaphragmChart) {
+            portDiaphragmChart.data.datasets = [];
+            portDiaphragmChart.update();
         }
     });
 });
