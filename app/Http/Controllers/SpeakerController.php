@@ -33,7 +33,7 @@ class SpeakerController extends Controller
             'scenario' => 'required|string|in:open_air,sealed,ported', // Box scenario
         ]);
 
-        // Conditional validation for lx, ly, and lz, port_length, and port_diameter
+        // Conditional validation for lx, ly, and lz, port_length, and port_section_aeria
         if ($validated['scenario'] === 'sealed' || $validated['scenario'] === 'ported') {
             $request->validate([
                 'lx' => 'required|numeric',
@@ -48,10 +48,12 @@ class SpeakerController extends Controller
         if ($validated['scenario'] === 'ported') {
             $request->validate([
                 'port_length' => 'required|numeric', // Port length (cm)
-                'port_diameter' => 'required|numeric', // Port diameter (cm)
+                'port_section_aeria' => 'required|numeric', // Port section_aeria (cm²)
+                'port_diagram_response' => 'boolean' // New checkbox validation
             ]);
             $validated['port_length'] = $request->input('port_length');
-            $validated['port_diameter'] = $request->input('port_diameter');
+            $validated['port_section_aeria'] = $request->input('port_section_aeria');
+            $validated['port_diagram_response'] = $request->input('port_diagram_response', false);
         }
 
         return response()->json($this->speakerService->calculateResponse($validated));

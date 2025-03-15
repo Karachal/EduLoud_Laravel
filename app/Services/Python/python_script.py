@@ -19,7 +19,6 @@ PI = np.pi
 m = 1.86 * 10 ** (-5)  # Viscosity coefficient, N.s/m^2
 R = 60 * 10 ** (-6)  # Fiber diameter, m
 LM = 6 * 10 ** (-8) # Molecular mean free path length between collisions
-m = 1.86 * 10 ** (-5)  # Viscosity coefficient, N.s/m^2
 POROSITY = 0.99  # Porosity
 U = 0.03  # Flow velocity in the material, m/s
 
@@ -117,6 +116,7 @@ class SealedBoxEnclosure:
         self.Vb = self.lx * self.ly * self.lz  # Calculate Vb in m³
 
     def calculate_diaphragm_radiation_impedance(self, f):
+        # Eq. 13.116 - 13.118
         k = self.lsp.calculate_wave_number(f)
         H1 = complex(mp.struveh(1, 2 * k * self.lsp.a))
         R_sp = R_0 * SOUND_CELERITY * (1 - jv(1, 2 * k * self.lsp.a) / (k * self.lsp.a))
@@ -256,21 +256,21 @@ class SealedBoxEnclosure:
 class PortedBoxEnclosure:
     """Loudspeaker enclosure model for a ported box."""
 
-    def __init__(self, loudspeaker, lx, ly, lz, port_length, port_diameter):
+    def __init__(self, loudspeaker, lx, ly, lz, port_length, port_section_aeria):
         self.lsp = loudspeaker
         self.lx = lx * 0.01  # Convert cm to m
         self.ly = ly * 0.01  # Convert cm to m
         self.lz = lz * 0.01  # Convert cm to m
         self.port_length = port_length * 0.01  # Convert cm to m
-        self.port_diameter = port_diameter * 0.01  # Convert cm to m
-        self.truncation_limit = 10
+        self.port_section_aeria = port_section_aeria * 0.0001  # Convert cm² to m²
+        self.truncation_limit = 5
         self.r = 0.15
 
         # Calculate box volume (Vb)
         self.Vb = self.lx * self.ly * self.lz  # Box volume in m³
 
         # Calculate port area (Sp) and port volume (Vp)
-        self.Sp = np.pi * (self.port_diameter / 2) ** 2  # Port area in m²
+        self.Sp = self.port_section_aeria  # Port area in m²
         self.Vp = self.Sp * self.port_length  # Port volume in m³
 
         # Calculate effective box volume (Vab)
@@ -282,8 +282,8 @@ class PortedBoxEnclosure:
 
     def calculate_port(self):
         """Calculate the port parameters based on known port dimensions."""
-        # Calculate the tuning frequency (fb) using Helmholtz resonator formula
-        fb = (SOUND_CELERITY / (2 * np.pi)) * np.sqrt(self.Sp / (self.Vab * self.port_length))
+        # Calculate the tuning frequency (fb) using Helmholtz resonator formula eq. 7.97
+        fb = (SOUND_CELERITY / (2 * np.pi * self.port_length)) * np.sqrt(self.Vp / self.Vab)
 
         # Return port area (Sp), port length (t), and tuning frequency (fb)
         return self.Sp, self.port_length, fb
@@ -325,12 +325,19 @@ class PortedBoxEnclosure:
         return Zab
     
     def calculate_simplified_diaphragm_radiation_impedance(self, f, a):
-        Rar = 0.01076 * f**2
-        Xar = 1.5 * f / a
+        Rar = 0.01076 * f**2 #eq. 7.31
+        Xar = 1.5 * f / a #eq. 7.32a
         Z_a1 = 1 * (Rar + 1j * Xar)
 
         return Z_a1
-    
+    def calculate_diaphragm_radiation_impedance(self, f):
+        # Eq. 13.116 - 13.118
+        k = self.lsp.calculate_wave_number(f)
+        H1 = complex(mp.struveh(1, 2 * k * self.lsp.a))
+        R_sp = R_0 * SOUND_CELERITY * (1 - jv(1, 2 * k * self.lsp.a) / (k * self.lsp.a))
+        X_sp = R_0 * SOUND_CELERITY * (H1 / (k * self.lsp.a))
+        Z_a2 = R_sp + 1j * X_sp
+        return Z_a2    
     def calculate_port_impedance_Za2(self, f, r_d):
         """Calculate the rectangular port impedance based on equation 13.336 and 13.337."""
         q = self.lx / self.ly
@@ -495,14 +502,14 @@ class PortedBoxEnclosure:
         self.lsp.calculate_wave_number(f)
 
         # Calculate the simplified diaphragm radiation impedance
-        Z_a2 = self.calculate_simplified_diaphragm_radiation_impedance(f, ap)
+        # Z_a2 = self.calculate_simplified_diaphragm_radiation_impedance(f, ap)
 
         # Calculate the simplified box impedance for circular loudspeaker
         Zab = self.calculate_simplified_box_impedance_Zab(f, B=0.3)
 
-        Z_a3 = self.calculate_simplified_diaphragm_radiation_impedance(f, self.lsp.a)
+        Z_a1 = self.calculate_diaphragm_radiation_impedance(f)
         #TEST INSTEAD Z_a3 with extensive type
-        Z_a1 = self.calculate_circular_Za1(f)
+        # Z_a1 = self.calculate_circular_Za1(f)
 
         # Calculate the leakage resistance
         Ral = self.calculate_leakage_resistance()
@@ -571,12 +578,12 @@ class PortedBoxEnclosure:
         self.lsp.calculate_wave_number(f)
 
         # Calculate the simplified diaphragm radiation impedance
-        Z_a2 = self.calculate_simplified_diaphragm_radiation_impedance(f, ap)
+        # Z_a2 = self.calculate_simplified_diaphragm_radiation_impedance(f, ap)
 
         # Calculate the simplified box impedance for circular loudspeaker
         Zab = self.calculate_simplified_box_impedance_Zab(f, B=0.3)
 
-        Z_a3 = self.calculate_simplified_diaphragm_radiation_impedance(f, self.lsp.a)
+        Z_a1 = self.calculate_diaphragm_radiation_impedance(f)
 
         # Calculate the leakage resistance
         Ral = self.calculate_leakage_resistance()
@@ -598,7 +605,7 @@ class PortedBoxEnclosure:
         E = np.array([[0, self.lsp.Bl], [1 / self.lsp.Bl, 0]])
         D = np.array([[1, Z_md], [0, 1]])
         M = np.array([[self.lsp.Sd, 0], [0, 1 / self.lsp.Sd]])
-        F = np.array([[1, Z_a3], [0, 1]])
+        F = np.array([[1, Z_a1], [0, 1]])
         L = np.array([[1, 0], [1 / Ral, 1]])
         B = np.array([[1, 0], [1 / Zab, 1]])  # For simplified method
         P = np.array(
@@ -655,16 +662,19 @@ class PortedBoxEnclosure:
         power = 10 * np.log10(float(W / W_ref))
 
         # Calculate the sound pressure level
-        prms = R_0 * f * UB
+        r_rms = R_0 * f * UB
+        d_rms = R_0 * f * U6
+        p_rms = R_0 * f * Up
         pref = 20e-6
-        SPL = 20 * np.log10(float(abs(prms)) / float(abs(pref)))
-
-        return SPL
+        SPL = 20 * np.log10(float(abs(r_rms)) / float(abs(pref)))
+        SPL_port = 20 * np.log10(float(abs(p_rms)) / float(abs(pref)))
+        SPL_diaphragm = 20 * np.log10(float(abs(d_rms)) / float(abs(pref)))
+        return SPL,  SPL_port, SPL_diaphragm
     
 def calculate_speaker_response(parameters):
     try:
         scenario = parameters["scenario"]
-        frequencies = np.logspace(np.log10(20), np.log10(20000), 1000)
+        frequencies = np.logspace(np.log10(20), np.log10(20000), 500)
 
         loudspeaker = Loudspeaker(parameters)
 
@@ -672,20 +682,48 @@ def calculate_speaker_response(parameters):
             enclosure = OpenAir(loudspeaker)
             spl = [enclosure.calculate_spl(f) for f in frequencies]
             impedance = [enclosure.calculate_impedance(f) for f in frequencies]
+            return {"frequencies": frequencies.tolist(), "spl": {scenario: spl}, "impedance": {scenario: impedance}}
             
         elif scenario == "sealed":
             enclosure = SealedBoxEnclosure(loudspeaker, parameters["lx"], parameters["ly"], parameters["lz"])
             spl = [enclosure.calculate_spl(f) for f in frequencies]
             impedance = [enclosure.calculate_impedance(f) for f in frequencies]
+            return {"frequencies": frequencies.tolist(), "spl": {scenario: spl}, "impedance": {scenario: impedance}}
+        
         elif scenario == "ported":
-            enclosure = PortedBoxEnclosure(loudspeaker, parameters["lx"], parameters["ly"], parameters["lz"], parameters["port_length"], parameters["port_diameter"])
-            spl = [enclosure.calculate_spl(f) for f in frequencies]
-            impedance = [enclosure.calculate_impedance(f) for f in frequencies]
-        # spl = [enclosure.calculate_spl(f) for f in frequencies]
-        # impedance = [enclosure.calculate_impedance(f) for f in frequencies]
+            port_diagram_response = parameters.get("port_diagram_response", False)
 
-        return {"frequencies": frequencies.tolist(), "spl": {scenario: spl}, "impedance": {scenario: impedance}}
-        #return {"frequencies": frequencies.tolist(), "spl": {scenario: spl}}
+            enclosure = PortedBoxEnclosure(
+                loudspeaker,
+                parameters["lx"],
+                parameters["ly"],
+                parameters["lz"],
+                parameters["port_length"],
+                parameters["port_section_aeria"],
+            )
+
+            if port_diagram_response:
+                # Get SPL, SPL_port, and SPL_diaphragm if the checkbox is checked
+                spl, spl_port, spl_diaphragm = zip(*[enclosure.calculate_spl(f) for f in frequencies])
+                impedance = [enclosure.calculate_impedance(f) for f in frequencies]
+
+                return {
+                    "frequencies": frequencies.tolist(),
+                    "spl": {"ported": spl},
+                    "spl_port": {"ported": spl_port},
+                    "spl_diaphragm": {"ported": spl_diaphragm},
+                    "impedance": {"ported": impedance},
+                }
+            else:
+                # Default behavior if checkbox is NOT checked (return only SPL)
+                spl = [enclosure.calculate_spl(f)[0] for f in frequencies]  # Take only the main SPL
+                impedance = [enclosure.calculate_impedance(f) for f in frequencies]
+
+                return {
+                    "frequencies": frequencies.tolist(),
+                    "spl": {"ported": spl},
+                    "impedance": {"ported": impedance},
+                }
 
     except Exception as e:
         return {"error": str(e)}

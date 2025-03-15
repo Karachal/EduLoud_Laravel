@@ -1,6 +1,6 @@
 [
     {
-        "name": "Open Air Mellow & Beranek",
+        "name": "Typical 100mm Loudspeaker [Beranek, Mellow 2019]",
         "re": 7,
         "le": 0.1,
         "qes": 2.2,
@@ -12,13 +12,24 @@
         "z": 8
     },
     {
-        "name": "Closed Box Mellow & Beranek",
+        "name": "Bandor type 100DW/8A [Beranek, Mellow 2019]",
         "re": 6.27,
         "le": 0.25,
         "qes": 0.55,
         "qms": 2.2,
         "fs": 39,
         "vas": 21.6,
+        "sd": 120,
+        "z": 8
+    },
+    {
+        "name": "Bandor type 100DW/8A For Bass-reflex enclosure design [Beranek, Mellow 2019]",
+        "re": 6.27,
+        "le": 0.25,
+        "qes": 0.522,
+        "qms": 1.9,
+        "fs": 37,
+        "vas": 24,
         "sd": 120,
         "z": 8
     },

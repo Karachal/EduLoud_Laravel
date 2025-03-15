@@ -1,6 +1,7 @@
 jQuery(document).ready(function () {
     var responseChart;   // For SPL vs freq(Hz)
     var impedanceChart;  // For Impedance vs (f/fs)
+    var portDiaphragmChart;
     var speakers = [];
 
     restoreSuggestions();
@@ -103,7 +104,8 @@ jQuery(document).ready(function () {
         }
         if (scenario === "ported") {
             formData.port_length = parseFloat(jQuery("#port_length").val()) || null;
-            formData.port_diameter = parseFloat(jQuery("#port_diameter").val()) || null;
+            formData.port_section_aeria = parseFloat(jQuery("#port_section_aeria").val()) || null;
+            formData.port_diagram_response = jQuery("#port_diagram_response").is(":checked");
         }
     
         console.log("Form Data:", formData);
@@ -137,6 +139,15 @@ jQuery(document).ready(function () {
                         updateImpedanceChart(response, scenario);
                     } else {
                         console.error("Missing impedance or frequency data in response.");
+                    }
+
+                    // Update Port & Diaphragm Chart ONLY IF "ported" and checkbox enabled
+                    if (scenario === "ported" && formData.port_diagram_response) {
+                        if (response.spl_port && response.spl_diaphragm) {
+                            updatePortDiaphragmChart(response.frequencies, response, scenario);
+                        } else {
+                            console.error("Missing port/diaphragm response data.");
+                        }
                     }
                 }
             },
@@ -187,8 +198,7 @@ jQuery(document).ready(function () {
                         },
                         y: {
                             title: { display: true, text: "SPL (dB)" },
-                            // min: 40,
-                            // max: 100,
+                            min: 60,
                             ticks: { beginAtZero: false }
                         }
                     },
@@ -306,9 +316,158 @@ jQuery(document).ready(function () {
         // Update the chart
         impedanceChart.update();
     }
+
+    // Function to update the new Port & Diaphragm SPL chart
+    function updatePortDiaphragmChart(frequencies, response, scenario) {
+        console.log("Updating Port & Diaphragm Response Chart:", scenario);
+
+        // Check if the response contains the required data
+        if (!Array.isArray(frequencies) || !response.spl_port || !response.spl_diaphragm) {
+            console.error("Invalid data for Port & Diaphragm chart update.");
+            return;
+        }
+
+        var ctx = document.getElementById("portDiaphragmChart").getContext("2d");
+
+        if (!portDiaphragmChart) {
+            portDiaphragmChart = new Chart(ctx, {
+                type: "line",
+                data: { datasets: [] },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: "logarithmic",
+                            position: "bottom",
+                            title: { display: true, text: "Frequency (Hz)" },
+                            min: 20,
+                            max: 20000,
+                            ticks: {
+                                autoSkip: true,
+                                maxTicksLimit: 20,
+                                callback: function (value) {
+                                    return Number(value).toFixed(0);
+                                }
+                            }
+                        },
+                        y: {
+                            title: { display: true, text: "SPL (dB)" },
+                            min: 40,
+                            ticks: { beginAtZero: false }
+                        }
+                    },
+                    elements: {
+                        line: { borderJoinStyle: 'round' }
+                    },
+                    plugins: {
+                        legend: { display: true }
+                    }
+                }
+            });
+        }
+
+        // Define datasets for SPL_port and SPL_diaphragm
+        var datasetsToAdd = [];
+
+        if (response.spl_port[scenario]) {
+            datasetsToAdd.push({
+                label: scenario.replace("_", " ") + " SPL (Port)",
+                data: frequencies.map((f, i) => ({ x: f, y: response.spl_port[scenario][i] })),
+                borderColor: "blue",
+                borderWidth: 1,
+                pointRadius: 0.5,
+                fill: false,
+                tension: 0.4
+            });
+        }
+
+        if (response.spl_diaphragm[scenario]) {
+            datasetsToAdd.push({
+                label: scenario.replace("_", " ") + " SPL (Diaphragm)",
+                data: frequencies.map((f, i) => ({ x: f, y: response.spl_diaphragm[scenario][i] })),
+                borderColor: "green",
+                borderWidth: 1,
+                pointRadius: 0.5,
+                fill: false,
+                tension: 0.4
+            });
+        }
+
+        // Replace datasets and update the chart
+        portDiaphragmChart.data.datasets = datasetsToAdd;
+        portDiaphragmChart.update();
+    }
     
     // Track overridden fields
     let overriddenFields = {};
+
+    // Function to round a number to 3 significant figures
+    function roundToSignificantFigures(num, sigFigs = 3) {
+        if (num === 0) return 0; // Avoid log issues with zero
+        let scale = Math.pow(10, sigFigs - Math.floor(Math.log10(Math.abs(num))) - 1);
+        return Math.round(num * scale) / scale;
+    }
+
+    // Function to calculate Fb (Tuning Frequency)
+    function calculateFb() {
+        console.log("calculateFb function triggered!"); // Debugging message
+
+        // Read and convert input values
+        let lx = parseFloat(jQuery("#lx").val()) * 0.01; // Convert cm to m
+        let ly = parseFloat(jQuery("#ly").val()) * 0.01;
+        let lz = parseFloat(jQuery("#lz").val()) * 0.01;
+        let portLength = parseFloat(jQuery("#port_length").val()) * 0.01; // Convert cm to m
+        let portSection = parseFloat(jQuery("#port_section_aeria").val()) * 0.0001; // Convert cm² to m²
+
+        console.log("Raw input values - lx:", lx, "ly:", ly, "lz:", lz, "portLength:", portLength, "portSection:", portSection);
+
+        // Check for missing values
+        if (isNaN(lx) || isNaN(ly) || isNaN(lz) || isNaN(portLength) || isNaN(portSection)) {
+            console.log("Missing values, fb calculation skipped.");
+            jQuery("#fb").val("");
+            return;
+        }
+
+        // Box volume (Vb) in cubic meters
+        let Vb = lx * ly * lz;
+
+        // ✅ Directly calculate Sp, Vp, and Vab inside this function
+        let Sp = portSection; // Port section area in m² (already converted)
+        let Vp = Sp * portLength; // Port volume in m³
+        let Vab = Vb - Vp; // Effective box volume in m³
+
+        console.log("Port Section Area (Sp) in m²:", Sp);
+        console.log("Port Volume (Vp) in m³:", Vp);
+        console.log("Effective Box Volume (Vab) in m³:", Vab);
+
+        // Ensure values are valid
+        if (Vab <= 0 || Vp <= 0) {
+            console.log("Error: Vab or Vp is invalid. Fb calculation stopped.");
+            jQuery("#fb").val("");
+            return;
+        }
+
+        // ✅ Correct Fb formula (NO ROUNDING)
+        let fb = (344.8 / (2 * Math.PI * portLength)) * Math.sqrt(Vp / Vab);
+
+        console.log("Raw Fb:", fb); // ✅ Debugging message
+
+        // ✅ Update the fb field with the raw value
+        jQuery("#fb").val(fb);
+    }
+
+    // Ensure Fb is calculated when inputs change
+    jQuery(document).ready(function () {
+        console.log("Page loaded - running calculateFb() once");
+        calculateFb(); // Run once on page load
+    });
+
+    // Trigger recalculation when inputs change
+    jQuery("#port_length, #port_section_aeria, #lx, #ly, #lz").off("input").on("input", calculateFb);
+
+
+   
 
     // Function to calculate Physical Parameters with correct unit conversions
     function calculatePhysicalParameters() {
@@ -351,12 +510,11 @@ jQuery(document).ready(function () {
         
 
         // Update form fields with calculated values (only if not overridden by the user)
-        if (!overriddenFields.qts) jQuery("#qts").val(Qts.toFixed(6));
-        if (!overriddenFields.cms) jQuery("#cms").val(Cms.toFixed(6));
-        if (!overriddenFields.mms) jQuery("#mms").val(Mms.toFixed(6));
-        if (!overriddenFields.rms) jQuery("#rms").val(Rms.toFixed(6));
-        if (!overriddenFields.bl) jQuery("#bl").val(BL.toFixed(6));
-        // if (!overriddenFields.le) jQuery("#le").val(Le.toFixed(6));
+        if (!overriddenFields.qts) jQuery("#qts").val(roundToSignificantFigures(Qts, 3));
+        if (!overriddenFields.cms) jQuery("#cms").val(roundToSignificantFigures(Cms, 3));
+        if (!overriddenFields.mms) jQuery("#mms").val(roundToSignificantFigures(Mms, 3));
+        if (!overriddenFields.rms) jQuery("#rms").val(roundToSignificantFigures(Rms, 3));
+        if (!overriddenFields.bl) jQuery("#bl").val(roundToSignificantFigures(BL, 3));
     }
 
     // Attach event listeners to Thiele-Small parameters to trigger recalculation

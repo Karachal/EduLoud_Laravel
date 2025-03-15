@@ -79,12 +79,12 @@
                         <h5 class="text-center fw-bold math-font">Thiele-Small Parameters</h5>
                         <div class="row">
                             @foreach ([
-                                're'  => '<i>R</i><sub><span style="font-style: normal;">E</span></sub>&thinsp;( <span style="font-style: normal;">Ω</span> )',
+                                're'  => '<i>R</i><sub><span style="font-style: normal;">E</span></sub>&thinsp;(<span style="font-style: normal;">Ω</span>)',
                                 'qes' => '<i>Q</i><sub><span style="font-style: normal;">es</span></sub>',
                                 'qms' => '<i>Q</i><sub><span style="font-style: normal;">ms</span></sub>',
-                                'fs'  => '<i>f</i><sub><span style="font-style: normal;">s</span></sub>&thinsp;( <span style="font-style: normal;">Hz</span> )',
-                                'sd'  => '<i>S</i><sub><span style="font-style: normal;">d</span></sub>&thinsp;( <span style="font-style: normal;">cm²</span> )',
-                                'vas' => '<i>V</i><sub><span style="font-style: normal;">as</span></sub>&thinsp;( <span style="font-style: normal;">L</span> )'
+                                'fs'  => '<i>f</i><sub><span style="font-style: normal;">s</span></sub>&thinsp;(<span style="font-style: normal;">Hz</span>)',
+                                'sd'  => '<i>S</i><sub><span style="font-style: normal;">d</span></sub>&thinsp;(<span style="font-style: normal;">cm²</span>)',
+                                'vas' => '<i>V</i><sub><span style="font-style: normal;">as</span></sub>&thinsp;(<span style="font-style: normal;">L</span>)'
                             ] as $id => $label)
                                 <div class="col-md-12">
                                     <label for="{{ $id }}" class="form-label math-font">{!! $label !!}</label>
@@ -101,12 +101,12 @@
                         <div class="row">
                             @foreach ([
                                 'qts' => '<i>Q</i><sub><span style="font-style: normal;">ts</span></sub>',
-                                'cms' => '<i>C</i><sub><span style="font-style: normal;">ms</span></sub>&thinsp;( <span style="font-style: normal;">µm/N</span> )',
-                                'mms' => '<i>M</i><sub><span style="font-style: normal;">ms</span></sub>&thinsp;( <span style="font-style: normal;">g</span> )',
-                                'rms' => '<i>R</i><sub><span style="font-style: normal;">ms</span></sub>&thinsp;( <span style="font-style: normal;">Ns/m</span> )',
-                                'bl'  => '<i>Bl</i> ( <span style="font-style: normal;">Tm</span> )',
-                                'le'  => '<i>L</i><sub><span style="font-style: normal;">e</span></sub>&thinsp;( <span style="font-style: normal;">mH</span> )',
-                                'z'   => '<i>Z</i>&thinsp;( <span style="font-style: normal;">Ω</span> )'
+                                'cms' => '<i>C</i><sub><span style="font-style: normal;">ms</span></sub>&thinsp;(<span style="font-style: normal;">µm/N</span>)',
+                                'mms' => '<i>M</i><sub><span style="font-style: normal;">ms</span></sub>&thinsp;(<span style="font-style: normal;">g</span>)',
+                                'rms' => '<i>R</i><sub><span style="font-style: normal;">ms</span></sub>&thinsp;(<span style="font-style: normal;">Ns/m</span>)',
+                                'bl'  => '<i>Bl</i> (<span style="font-style: normal;">Tm</span>)',
+                                'le'  => '<i>L</i><sub><span style="font-style: normal;">e</span></sub>&thinsp;( <span style="font-style: normal;">mH</span>)',
+                                'z'   => '<i>Z</i>&thinsp;(<span style="font-style: normal;">Ω</span>)'
                             ] as $id => $label)
                                 <div class="col-md-12">
                                     <label for="{{ $id }}" class="form-label math-font">{!! $label !!}</label>
@@ -138,19 +138,19 @@
                         <label for="lx" class="form-label math-font">
                             <i>l</i><sub><span style="font-style: normal;">x</span></sub>&thinsp;( <span style="font-style: normal;">cm</span> )
                         </label>
-                        <input type="number" class="form-control" id="lx" name="lx" step="0.1">
+                        <input type="number" class="form-control" id="lx" name="lx" step="0.01">
                     </div>
                     <div class="col-md-4">
                         <label for="ly" class="form-label math-font">
                             <i>l</i><sub><span style="font-style: normal;">y</span></sub>&thinsp;( <span style="font-style: normal;">cm</span> )
                         </label>
-                        <input type="number" class="form-control" id="ly" name="ly" step="0.1">
+                        <input type="number" class="form-control" id="ly" name="ly" step="0.01">
                     </div>
                     <div class="col-md-4">
                         <label for="lz" class="form-label math-font">
                             <i>l</i><sub><span style="font-style: normal;">z</span></sub>&thinsp;( <span style="font-style: normal;">cm</span> )
                         </label>
-                        <input type="number" class="form-control" id="lz" name="lz" step="0.1">
+                        <input type="number" class="form-control" id="lz" name="lz" step="0.01">
                     </div>
                 </div>
 
@@ -158,13 +158,28 @@
                 <div id="portedParams" class="row mt-3" style="display: none;">
                     <div class="col-md-6">
                         <label for="port_length" class="form-label math-font">Port length (cm)</label>
-                        <input type="number" class="form-control" id="port_length" name="port_length" list="port_length-suggestions" step="0.1">
+                        <input type="number" class="form-control" id="port_length" name="port_length" list="port_length-suggestions" step="0.01">
                         <datalist id="port_length-suggestions"></datalist>
                     </div>
                     <div class="col-md-6">
-                        <label for="port_diameter" class="form-label math-font">Port diameter (cm)</label>
-                        <input type="number" class="form-control" id="port_diameter" name="port_diameter" list="port_diameter-suggestions" step="0.1">
-                        <datalist id="port_diameter-suggestions"></datalist>
+                        <label for="port_section_aeria" class="form-label math-font">Port Section Aeria (cm²)</label>
+                        <input type="number" class="form-control" id="port_section_aeria" name="port_section_aeria" list="port_section_aeria-suggestions" step="0.01">
+                        <datalist id="port_section_aeria-suggestions"></datalist>
+                    </div>
+                    <div class="d-flex align-items-center mt-4">  
+                        <!-- Checkbox -->
+                        <div class="form-check me-3">
+                            <input type="checkbox" id="port_diagram_response" name="port_diagram_response" class="form-check-input">
+                            <label class="form-check-label" for="port_diagram_response">Port & Diaphragm response</label>
+                        </div>
+
+                        <!-- Fb Field -->
+                        <div>
+                            <label for="fb" class="form-label math-font mb-0">
+                                <i>f</i><sub><span style="font-style: normal;">b</span></sub>&thinsp;(<span style="font-style: normal;">Hz</span>)
+                            </label>
+                            <input type="text" class="form-control d-inline-block" id="fb" name="fb" style="width: 80px;" readonly>
+                        </div>
                     </div>
                 </div>
 
@@ -183,6 +198,10 @@
         <div class="mt-5">
             <canvas id="impedanceChart" style="max-width: 800px; margin: auto;"></canvas>
         </div>
+        <div class="mt-5">
+            <canvas id="portDiaphragmChart" style="max-width: 800px; margin: auto;"></canvas>
+        </div>
+        
     </div>
 
     <script>
