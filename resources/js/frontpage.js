@@ -113,8 +113,7 @@ jQuery(document).ready(function () {
         // Save suggestions
         saveSuggestions(formData);
     
-        // Show loading state
-        // Show Loading Spinner
+        // Show loading state & spinner
         jQuery("#loadingSpinner").removeClass("d-none");
         jQuery("#toggleFormBtn").prop("disabled", true).text("Calculating...");
     
@@ -217,6 +216,9 @@ jQuery(document).ready(function () {
         }
 
         var labelName = scenario.replace("_", " ");
+        if (labelName === "sealed") {
+            labelName = "closed box";
+        }
         var dsIndex = responseChart.data.datasets.findIndex(ds => ds.label === labelName);
 
         if (dsIndex === -1) {
@@ -298,6 +300,10 @@ jQuery(document).ready(function () {
     
         // Update or add the dataset for the current scenario
         var labelName = scenario.replace("_", " ");
+        // Change "sealed" to "Closed Box" in the legend
+        if (labelName === "sealed") {
+            labelName = "closed box";
+        }
         var dsIndex = impedanceChart.data.datasets.findIndex(ds => ds.label === labelName);
     
         if (dsIndex === -1) {
