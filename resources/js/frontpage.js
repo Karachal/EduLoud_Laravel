@@ -114,6 +114,8 @@ jQuery(document).ready(function () {
         saveSuggestions(formData);
     
         // Show loading state
+        // Show Loading Spinner
+        jQuery("#loadingSpinner").removeClass("d-none");
         jQuery("#toggleFormBtn").prop("disabled", true).text("Calculating...");
     
         // AJAX
@@ -159,6 +161,8 @@ jQuery(document).ready(function () {
                 jQuery("#errorMessage").removeClass("d-none").text(errorMessage);
             },
             complete: function () {
+                // Hide Loading Spinner
+                jQuery("#loadingSpinner").addClass("d-none");
                 jQuery("#toggleFormBtn").prop("disabled", false).text("Hide Form");
             }
         });

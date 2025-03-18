@@ -17,6 +17,17 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-logarithmic"></script>
 
+    <a href="http://avlab.ece.auth.gr" 
+        style="display: inline-block; padding: 6px 14px; font-size: 0.9rem; font-weight: bold; 
+            color: black; background-color: white; border: 1px solid black; 
+            border-radius: 5px; text-align: center; text-decoration: none; 
+            transition: all 0.3s ease; cursor: pointer; 
+            position: absolute; top: 10px; right: 10px;"
+        onmouseover="this.style.backgroundColor='#953434'; this.style.color='white'; this.style.borderColor='#953434';"
+        onmouseout="this.style.backgroundColor='white'; this.style.color='black'; this.style.borderColor='black';">
+        Go to AVLab
+    </a>
+
     <style>
         body { padding: 20px; }
         canvas { max-width: 100%; height: 400px; }
@@ -37,11 +48,14 @@
                 style="width: 500px; height: auto; max-width: 100%;">
         </div>
 
-        <!-- <button class="btn btn-secondary toggle-button" id="toggleFormBtn">Hide Form</button>
-        <button type="button" id="clearFormBtn" class="btn btn-secondary">Clear Form</button> -->
-        <button class="btn btn-secondary toggle-button d-block mb-2" id="toggleFormBtn">Hide Form</button>
+        <button class="btn btn-secondary toggle-button d-block mb-2" id="toggleFormBtn"
+            style="width: 120px; padding: 6px; font-size: 0.85rem; text-align: center; border-radius: 5px;">
+            Hide Form
+        </button>
+
         <button type="button" id="clearFormBtn" class="btn d-block"
-            style="background-color: #FFA07A; border-color: #E9967A; color: white;"
+            style="width: 120px; padding: 6px; font-size: 0.85rem; text-align: center; border-radius: 5px;
+                background-color: #FFA07A; border-color: #E9967A; color: white;"
             onmouseover="this.style.backgroundColor='#FF7F50'; this.style.borderColor='#E67E22';"
             onmouseout="this.style.backgroundColor='#FFA07A'; this.style.borderColor='#E9967A';">
             Clear Form
@@ -189,7 +203,15 @@
                 </div>
             </form>
         </div>
+        
 
+        <!-- Loading Spinner -->
+        <div id="loadingSpinner" class="text-center d-none" style="margin-top: 20px;">
+            <div class="spinner-border text-primary" role="status" style="width: 2rem; height: 2rem;">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <!-- <p>Generating Charts...</p> -->
+        </div>
 
         <!-- Charts -->
         <div class="mt-5">
